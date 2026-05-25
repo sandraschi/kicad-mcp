@@ -1,0 +1,63 @@
+# KiCad MCP — LLM Context
+
+KiCad MCP is a FastMCP 3.2 server that provides AI-driven PCB/schematic design automation for KiCad EDA. It exposes 39 MCP tools across 5 domains.
+
+## Key Files
+
+| Path | Purpose |
+|------|---------|
+| `src/kicad_mcp/server.py` | FastMCP + FastAPI gateway, 430 lines |
+| `src/kicad_mcp/kc_bridge.py` | TCP JSON-RPC bridge to pcbnew (KiCad GUI), 360 lines |
+| `src/kicad_mcp/tools/pcb.py` | 17 PCB tools: load, inspect, DRC, STEP/Gerber export, POS, DXF, SVG, PDF, VRML, GLB, IPC-2581, ODB++, place component, add track, add via, save, set board outline |
+| `src/kicad_mcp/tools/schematic.py` | 8 schematic tools: load, info, ERC, netlist, BOM, PDF, SVG, DXF export |
+| `src/kicad_mcp/tools/marketplace.py` | 5 marketplace tools: search GitHub/Kitspace/SnapEDA, download, parts search/missing |
+| `src/kicad_mcp/tools/library.py` | 6 library tools: footprint/symbol list/search, fp/sym SVG export |
+| `src/kicad_mcp/tools/bom.py` | 1 BOM tool: generate structured BOM |
+| `webapp/` | React 19 + Vite 6 + Tailwind + TypeScript dashboard |
+| `native/` | Tauri 2.0 desktop wrapper |
+| `start.ps1` | Fleet-standard startup script with param block, readiness poll, auto-browser |
+| `justfile` | Lifecycle: bootstrap, serve, dev, lint, test, e2e, fix, build-native |
+
+## Architecture
+
+```
+MCP Client/LLM → HTTP/SSE → FastMCP → kicad-cli (headless)
+                                    → kc_bridge TCP:11018 (KiCad GUI pcbnew)
+                                    → Direct pcbnew import (future)
+```
+
+Three execution modes:
+1. **kicad-cli subprocess** — always available, headless exports/checks
+2. **TCP bridge** — requires KiCad GUI running kc_bridge.py, enables BOARD CRUD
+3. **Direct pcbnew import** — future, for standalone Python without KiCad GUI
+
+## Ports
+
+| Port | Service |
+|------|---------|
+| 11016 | Backend (FastAPI + FastMCP) |
+| 11017 | Frontend (Vite dev) |
+| 11018 | KiCad TCP bridge (internal) |
+
+## Quick Start
+
+```powershell
+just bootstrap
+just serve
+# Open http://localhost:11017
+```
+
+## KiCad Integration
+
+- kicad-cli: always available if KiCad 8+ installed
+- pcbnew SWIG API: available inside KiCad's Python console (deprecated, removed in KiCad 11)
+- kicad-python IPC API (KiCad 9+): upcoming future execution mode
+
+## Tool Categories
+
+- PCB (17): load, info, list components/nets/tracks, get component, DRC, export STEP/Gerber/POS/DXF/SVG/PDF/VRML/GLB/IPC-2581/ODB++, place component, add track/via, save, set board outline
+- Schematic (8): load, info, ERC, export netlist/python-bom/PDF/SVG/DXF
+- BOM (1): generate grouped BOM
+- Library (6): list/search footprints/symbols, fp/sym SVG export
+- Marketplace (5): search, categories, download, parts search, parts missing
+- System (2): status, supported commands

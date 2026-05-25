@@ -1,48 +1,70 @@
 # KiCad MCP
 
-KiCad PCB/schematic design automation via FastMCP 3.2 Unified Gateway.
+[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/Python-3.12+-blue.svg)](pyproject.toml)
+[![KiCad 8+](https://img.shields.io/badge/KiCad-8%2B-orange.svg)](https://www.kicad.org)
+[![MCP Server](https://img.shields.io/badge/MCP%20Server-glama.ai-blue)](https://glama.ai/mcp/servers/...)
+[![smithery](https://img.shields.io/badge/dynamic/json?url=https://smithery.ai/api/v1/servers/kicad-mcp&query=downloads&label=Smithery)](https://smithery.ai/server/kicad-mcp)
+[![GitHub last commit](https://img.shields.io/github/last-commit/sandraschi/kicad-mcp)](https://github.com/sandraschi/kicad-mcp)
 
-AI-driven electronics design: component inspection, DRC/ERC analysis,
-BOM generation, manufacturing export (STEP/Gerber), and cross-tool
-pipeline with freecad-mcp for enclosure design.
+AI-driven PCB/schematic design automation via **FastMCP 3.2**.
+39 MCP tools across 6 categories — component inspection, DRC/ERC, BOM generation,
+manufacturing export (Gerber, STEP, IPC-2581, ODB++), 3D visualization (GLB, VRML),
+pick-and-place, library search, marketplace (GitHub/Kitspace/SnapEDA), and **live PCB
+board editing** (place components, route tracks, add vias, set board outline, save).
 
 ## Quick Start
 
 ```powershell
 just bootstrap
 just serve
+# Open http://localhost:11017
 ```
 
-Then open http://localhost:11017 for the webapp.
+## Badges
 
-## Prerequisites
+| | |
+|---|---|
+| [Glama MCP Server](https://glama.ai/mcp/servers/...) | ![MCP Server](https://img.shields.io/badge/MCP%20Server-glama.ai-blue) |
+| Install via Smithery | `npx @smithery/cli install kicad-mcp` |
 
-- Python 3.12+ with uv
-- KiCad 8.0+ (provides kicad-cli and pcbnew Python API)
-- Node.js 20+ (for webapp)
+## Table of Contents
 
-## Architecture
+- [Setup & Configuration](docs/SETUP.md)
+- [Tool Catalog (all 39 tools)](docs/TOOLS.md)
+- [REST + MCP API Reference](docs/API.md)
+- [Architecture Deep-Dive](docs/ARCHITECTURE.md)
+- [KiCad Scripting Reference](docs/KICAD_API.md)
+- [Contributing](CONTRIBUTING.md)
+- [Changelog](CHANGELOG.md)
 
-```
-MCP Client → HTTP/SSE → server.py → kicad-cli (headless CLI)
-                                   → kc_bridge.py (GUI-dependent, internal to KiCad)
-                                       ↓
-                                   JSON response
-```
+## Tools Overview
 
-## Tools
+| Category | Count | Tools |
+|----------|-------|-------|
+| **PCB** | 17 | load, info, inspect, DRC, export (STEP/Gerber/POS/DXF/SVG/PDF/VRML/GLB/IPC-2581/ODB++), place component, add track/via, save, set board outline |
+| **Schematic** | 8 | load, info, ERC, export (netlist/BOM/PDF/SVG/DXF) |
+| **BOM** | 1 | generate (grouped JSON/CSV) |
+| **Library** | 6 | list/search footprints/symbols, export SVG |
+| **Marketplace** | 5 | search (GitHub/Kitspace/SnapEDA), download, find parts |
+| **System** | 2 | status, supported commands |
 
-| Category | Tools |
-|----------|-------|
-| **PCB** | pcb_load, pcb_info, pcb_list_components, pcb_list_nets, pcb_list_tracks, pcb_get_component, pcb_drc, pcb_export_step, pcb_export_gerber, pcb_export_pos, pcb_export_dxf, pcb_export_svg, pcb_export_pdf, pcb_export_vrml, pcb_export_glb, pcb_export_ipc2581, pcb_export_odbpp, pcb_place_component, pcb_add_track, pcb_add_via, pcb_save, pcb_set_board_outline |
-| **Schematic** | sch_load, sch_info, sch_erc, sch_export_netlist, sch_export_python_bom, sch_export_pdf, sch_export_svg, sch_export_dxf |
-| **BOM** | bom_generate |
-| **Library** | lib_list_footprints, lib_list_symbols, lib_find_footprint, lib_find_symbol, fp_export_svg, sym_export_svg |
-| **Marketplace** | marketplace_search, marketplace_categories, marketplace_download, parts_search, parts_missing |
-| **System** | kicad_status, kicad_supported_commands |
+## KiCad Integration
+
+Three execution modes:
+
+1. **kicad-cli** — headless, always available if KiCad installed
+2. **TCP bridge** (`kc_bridge.py`) — pcbnew BOARD CRUD (requires KiCad GUI)
+3. **IPC API** (upcoming) — kicad-python for KiCad 9+ headless mode
 
 ## Ports
 
-- **11016**: Backend (FastAPI + FastMCP HTTP/SSE)
-- **11017**: Frontend (Vite dev server)
-- **11018**: KiCad TCP bridge (internal)
+| Port | Service |
+|------|---------|
+| 11016 | Backend (FastAPI + FastMCP) |
+| 11017 | Frontend (Vite dev) |
+| 11018 | KiCad TCP bridge (internal) |
+
+## License
+
+MIT © 2026 Sandra Schipal. See [LICENSE](LICENSE).

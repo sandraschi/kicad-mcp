@@ -42,9 +42,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {status?.kicad_version && (
+      {status?.kicad_version ? (
         <div className="mt-4 text-xs text-gray-500">KiCad: {String(status.kicad_version)}</div>
-      )}
+      ) : null}
     </div>
   );
 }

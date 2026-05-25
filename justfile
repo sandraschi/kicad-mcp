@@ -38,6 +38,18 @@ stdio:
 web:
     npx --prefix '{{justfile_directory()}}\webapp' vite --port 11017
 
+# ── Native ─────────────────────────────────────────────────────────────────
+
+build-native:
+    Set-Location '{{justfile_directory()}}\native'
+    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
+    .\build.ps1
+
+build-native-debug:
+    Set-Location '{{justfile_directory()}}\native'
+    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
+    npx @tauri-apps/cli build --debug
+
 # ── Development ───────────────────────────────────────────────────────────────
 
 dev port=PORT:
