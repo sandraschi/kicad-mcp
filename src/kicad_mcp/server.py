@@ -46,9 +46,10 @@ KICAD_CLI_PATH = os.environ.get("KICAD_CLI_PATH") or next(
     (
         p
         for p in [
+            r"C:\Program Files\KiCad\10.0\bin\kicad-cli.exe",
+            r"C:\Program Files\KiCad\9.0\bin\kicad-cli.exe",
             r"C:\Program Files\KiCad\8.0\bin\kicad-cli.exe",
             r"C:\Program Files\KiCad\7.0\bin\kicad-cli.exe",
-            r"C:\Program Files\KiCad\9.0\bin\kicad-cli.exe",
         ]
         if os.path.isfile(p)
     ),

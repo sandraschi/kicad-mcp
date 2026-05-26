@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Activity, CircuitBoard, Cpu, FileText, FolderOpen, Library, ShoppingBag } from 'lucide-react';
+import { Activity, CircuitBoard, Cpu, FileText, FolderOpen, Library, ShoppingBag, Sparkles } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: Activity },
@@ -10,6 +10,7 @@ const navItems = [
   { to: '/library', label: 'Library', icon: Library },
   { to: '/marketplace', label: 'Market', icon: ShoppingBag },
   { to: '/files', label: 'Files', icon: FolderOpen },
+  { to: '/demo', label: 'Demo', icon: Sparkles },
   { to: '/status', label: 'Status', icon: Activity },
 ];
 

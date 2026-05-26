@@ -7,6 +7,7 @@ import BomPage from './pages/BomPage';
 import LibraryPage from './pages/LibraryPage';
 import MarketplacePage from './pages/MarketplacePage';
 import FilesPage from './pages/FilesPage';
+import DemoPage from './pages/DemoPage';
 import StatusPage from './pages/StatusPage';
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/marketplace" element={<MarketplacePage />} />
         <Route path="/files" element={<FilesPage />} />
+        <Route path="/demo" element={<DemoPage />} />
         <Route path="/status" element={<StatusPage />} />
       </Routes>
     </AppLayout>
