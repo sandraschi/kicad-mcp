@@ -34,7 +34,8 @@ just serve
 - [Tool Catalog (all 39 tools)](docs/TOOLS.md)
 - [REST + MCP API Reference](docs/API.md)
 - [Architecture Deep-Dive](docs/ARCHITECTURE.md)
-- [KiCad Scripting Reference](docs/KICAD_API.md)
+- [KiCad Scripting & API Reference](docs/KICAD_API.md)
+- [KiCad Plugin Ecosystem](docs/KICAD_PLUGINS.md)
 - [Contributing](CONTRIBUTING.md)
 - [Changelog](CHANGELOG.md)
 
@@ -56,6 +57,36 @@ Three execution modes:
 1. **kicad-cli** — headless, always available if KiCad installed
 2. **TCP bridge** (`kc_bridge.py`) — pcbnew BOARD CRUD (requires KiCad GUI)
 3. **IPC API** (upcoming) — kicad-python for KiCad 9+ headless mode
+
+## KiCad vs Professional EDA Tools
+
+KiCad is **production-grade**, used by CERN and Raspberry Pi. It covers ~90%
+of Altium Designer's capability at zero cost.
+
+| Capability | KiCad (Free) | Altium ($8k/yr) | Allegro ($20k/yr) |
+|------------|:------------:|:----------------:|:-----------------:|
+| Multi-layer PCB | ✅ 32 layers | ✅ | ✅ |
+| Push-and-shove routing | ✅ | ✅ | ✅ |
+| Differential pairs | ✅ | ✅ | ✅ |
+| Length tuning | ✅ manual | ✅ auto | ✅ auto |
+| 3D viewer | ✅ STEP/GLB | ✅ | ✅ |
+| Gerber/ODB++/IPC-2581 | ✅ | ✅ | ✅ |
+| Python scripting | ✅ deep pcbnew | ✅ limited | ✅ SKILL |
+| **Price** | **Free** | **$8,000/yr** | **$20,000/yr** |
+
+**Why KiCad wins for MCP**: No other EDA tool has `kicad-cli`. Altium
+has no headless CLI. Allegro's SKILL needs a license. KiCad is the
+**only** EDA tool that can be fully driven by an LLM.
+
+See [docs/KICAD_API.md](docs/KICAD_API.md) for the full comparison.
+
+## Plugin Ecosystem
+
+KiCad has a rich plugin system (PCM, Action Plugins, IPC Plugins) and
+a wide third-party ecosystem: KiBot (CI/CD), KiKit (panelization),
+InteractiveHtmlBom, KiCost, KiField, and more.
+
+See [docs/KICAD_PLUGINS.md](docs/KICAD_PLUGINS.md) for the full catalog.
 
 ## Ports
 

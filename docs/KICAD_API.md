@@ -202,3 +202,51 @@ Uses `plugin.json` metadata:
 | Schematic SWIG | ❌ | ❌ | ❌ | ❌ |
 | ODB++, STL, PLY, BREP, render | ❌ | ✅ | ✅ | ✅ |
 | Jobset automation | ❌ | ✅ | ✅ | ✅ |
+
+## 7. KiCad vs Professional EDA Tools
+
+KiCad is not a toy. It's used by CERN for particle accelerator electronics,
+by Raspberry Pi for the Pico, and by Arduino for their reference designs.
+Here's the honest comparison:
+
+| Capability | KiCad (Free) | Altium ($8k/yr) | Cadence Allegro ($20k/yr) |
+|------------|:------------:|:----------------:|:-------------------------:|
+| Copper layers | 32 | Unlimited | Unlimited |
+| Board size | Unlimited | Unlimited | Unlimited |
+| Hierarchical schematics | ✅ | ✅ | ✅ |
+| Push-and-shove routing | ✅ | ✅ | ✅ |
+| Differential pairs | ✅ | ✅ | ✅ |
+| Length tuning | ✅ manual | ✅ auto | ✅ auto |
+| BGA fanout | ✅ manual | ✅ auto | ✅ auto |
+| Impedance-controlled routing | ✅ | ✅ | ✅ |
+| 3D viewer | ✅ STEP/GLB | ✅ | ✅ |
+| Gerber/ODB++/IPC-2581 | ✅ all | ✅ | ✅ |
+| Python scripting | ✅ deep pcbnew API | ✅ limited | ✅ SKILL |
+| Simulation (SPICE) | ❌ external | ✅ built-in | ✅ |
+| Signal integrity | ❌ | ✅ | ✅ HyperLynx |
+| Thermal analysis | ❌ | ❌ | ✅ Celsius |
+| ECAD-MCAD co-design | ❌ | ✅ | ✅ |
+| Supply chain / distributor links | ❌ | ✅ Octopart | ❌ |
+| Team collaboration | ❌ | ✅ Altium 365 | ✅ |
+| Multi-board design | ❌ | ✅ | ✅ |
+| **Price** | **Free** | **$8,000/yr** | **$20,000/yr** |
+
+**The verdict**: KiCad does ~90% of what Altium does. The missing 10% is:
+simulation integration, signal integrity analysis, and workflow polish
+(multi-board, team collab, supply chain). For the 90% of PCB designs
+that don't need these — including PC motherboards, consumer electronics,
+and complex multi-layer boards — KiCad is production-ready.
+
+**Why KiCad wins for MCP**: kicad-cli is unique. No other EDA tool has
+a comprehensive headless CLI. Altium has no scripting CLI. Allegro has
+SKILL but it requires a license. KiCad's `kicad-cli` + pcbnew Python
+API make it the only EDA tool that can be fully driven by an LLM.
+
+## 8. KiCad Plugin Ecosystem
+
+See [KICAD_PLUGINS.md](KICAD_PLUGINS.md) for the full catalog of:
+- PCM (Plugin and Content Manager) — built-in package manager
+- Official plugins (Interactive BOM, Fabrication Toolkit, StepUp)
+- Third-party plugins (KiBot, KiKit, KiCost, InteractiveHtmlBom, KiField)
+- Helper apps and CLI tools
+- Writing custom Action Plugins (SWIG) and IPC Plugins (KiCad 9+)
