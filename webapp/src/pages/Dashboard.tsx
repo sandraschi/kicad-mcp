@@ -12,10 +12,10 @@ export default function Dashboard() {
   }, []);
 
   const cards = [
-    { label: 'KiCad CLI', value: status?.kicad_available ? 'Available' : 'Not Found', icon: Wrench, color: 'emerald' },
-    { label: 'Bridge Mode', value: String(status?.bridge_mode || 'unknown'), icon: Layers, color: 'blue' },
+    { label: 'Export CLI', value: status?.kicad_available ? '10.x ready' : 'Not Found', icon: Wrench, color: 'emerald' },
+    { label: 'CRUD Backend', value: String(status?.crud_backend || status?.bridge_mode || 'none'), icon: Layers, color: 'blue' },
+    { label: 'IPC Nightly', value: status?.ipc_api_server ? 'api-server' : 'not installed', icon: Cpu, color: 'purple' },
     { label: 'Tools Loaded', value: String(tools.length), icon: CircuitBoard, color: 'amber' },
-    { label: 'Uptime', value: `${Math.floor((Number(status?.uptime_s) || 0) / 60)}m`, icon: Cpu, color: 'purple' },
   ];
 
   return (
@@ -43,7 +43,13 @@ export default function Dashboard() {
       </div>
 
       {status?.kicad_version ? (
-        <div className="mt-4 text-xs text-gray-500">KiCad: {String(status.kicad_version)}</div>
+        <div className="mt-4 text-xs text-gray-500 space-y-1">
+          <div>Stable CLI: {String(status.kicad_version)}</div>
+          {status.kicad_ipc_version ? <div>IPC CLI: {String(status.kicad_ipc_version)}</div> : null}
+          {status.ipc_python_installed === false ? (
+            <div className="text-amber-500">kicad-python not installed — run uv sync --extra ipc</div>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

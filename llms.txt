@@ -1,35 +1,43 @@
 # KiCad MCP — LLM Context
 
-KiCad MCP is a FastMCP 3.2 server that provides AI-driven PCB/schematic design automation for KiCad EDA. It exposes 39 MCP tools across 5 domains.
+KiCad MCP is a FastMCP 3.2 server for AI-driven PCB/schematic automation on KiCad EDA.
+**39 MCP tools** across 6 categories. **Version 0.3.0** adds hybrid KiCad install (stable 10.x exports + 11 nightly headless IPC CRUD).
+
+## Hybrid architecture (v0.3.0)
+
+```
+MCP/REST → crud_router OR run_kicad_cli
+              │
+    Export lane (KICAD_CLI_PATH, 10.x stable)
+    Gerber STEP DRC ERC BOM library schematic CLI
+              │
+    CRUD lane (crud_backend)
+         ├─ ipc: kicad-cli api-server + kicad-python (11 nightly)
+         ├─ tcp: kc_bridge.py :11018 (KiCad GUI, legacy)
+         └─ none: export-only
+```
+
+Env: `KICAD_CLI_PATH`, `KICAD_IPC_CLI_PATH`, `KICAD_MCP_CRUD_BACKEND`, `KICAD_MCP_IPC_ENABLED`.
+
+Probe: `python -m kicad_mcp.scripts.probe_ipc_headless`
+
+Doc: `docs/NIGHTLY_HEADLESS.md`
 
 ## Key Files
 
 | Path | Purpose |
 |------|---------|
-| `src/kicad_mcp/server.py` | FastMCP + FastAPI gateway, 430 lines |
-| `src/kicad_mcp/kc_bridge.py` | TCP JSON-RPC bridge to pcbnew (KiCad GUI), 360 lines |
-| `src/kicad_mcp/tools/pcb.py` | 17 PCB tools: load, inspect, DRC, STEP/Gerber export, POS, DXF, SVG, PDF, VRML, GLB, IPC-2581, ODB++, place component, add track, add via, save, set board outline |
-| `src/kicad_mcp/tools/schematic.py` | 8 schematic tools: load, info, ERC, netlist, BOM, PDF, SVG, DXF export |
-| `src/kicad_mcp/tools/marketplace.py` | 5 marketplace tools: search GitHub/Kitspace/SnapEDA, download, parts search/missing |
-| `src/kicad_mcp/tools/library.py` | 6 library tools: footprint/symbol list/search, fp/sym SVG export |
-| `src/kicad_mcp/tools/bom.py` | 1 BOM tool: generate structured BOM |
-| `webapp/` | React 19 + Vite 6 + Tailwind + TypeScript dashboard |
-| `native/` | Tauri 2.0 desktop wrapper |
-| `start.ps1` | Fleet-standard startup script with param block, readiness poll, auto-browser |
-| `justfile` | Lifecycle: bootstrap, serve, dev, lint, test, e2e, fix, build-native |
-
-## Architecture
-
-```
-MCP Client/LLM → HTTP/SSE → FastMCP → kicad-cli (headless)
-                                    → kc_bridge TCP:11018 (KiCad GUI pcbnew)
-                                    → Direct pcbnew import (future)
-```
-
-Three execution modes:
-1. **kicad-cli subprocess** — always available, headless exports/checks
-2. **TCP bridge** — requires KiCad GUI running kc_bridge.py, enables BOARD CRUD
-3. **Direct pcbnew import** — future, for standalone Python without KiCad GUI
+| `src/kicad_mcp/server.py` | FastMCP + FastAPI gateway, hybrid lifespan |
+| `src/kicad_mcp/kicad_install.py` | Stable vs IPC CLI discovery |
+| `src/kicad_mcp/ipc_backend.py` | Headless IPC session (kipy) |
+| `src/kicad_mcp/crud_router.py` | CRUD backend dispatch |
+| `src/kicad_mcp/kc_bridge.py` | Legacy TCP JSON-RPC bridge (pcbnew GUI) |
+| `src/kicad_mcp/tools/pcb.py` | 17 PCB tools |
+| `src/kicad_mcp/tools/schematic.py` | 8 schematic tools |
+| `src/kicad_mcp/scripts/probe_ipc_headless.py` | Hybrid install diagnostic |
+| `docs/NIGHTLY_HEADLESS.md` | Hybrid install guide |
+| `webapp/` | React 19 dashboard |
+| `justfile` | bootstrap, serve, test, e2e |
 
 ## Ports
 
@@ -37,27 +45,36 @@ Three execution modes:
 |------|---------|
 | 11016 | Backend (FastAPI + FastMCP) |
 | 11017 | Frontend (Vite dev) |
-| 11018 | KiCad TCP bridge (internal) |
+| 11018 | Legacy KiCad TCP bridge |
 
 ## Quick Start
 
 ```powershell
+uv sync --extra ipc
 just bootstrap
 just serve
-# Open http://localhost:11017
+# http://localhost:11017
 ```
 
-## KiCad Integration
+## kicad_status fields (v0.3.0)
 
-- kicad-cli: always available if KiCad 8+ installed
-- pcbnew SWIG API: available inside KiCad's Python console (deprecated, removed in KiCad 11)
-- kicad-python IPC API (KiCad 9+): upcoming future execution mode
+`kicad_cli_path`, `kicad_ipc_cli_path`, `version`, `kicad_ipc_version`, `ipc_api_server`, `ipc_python_installed`, `crud_backend`, `bridge_mode` (alias), `work_dir`, `uptime_s`
 
 ## Tool Categories
 
-- PCB (17): load, info, list components/nets/tracks, get component, DRC, export STEP/Gerber/POS/DXF/SVG/PDF/VRML/GLB/IPC-2581/ODB++, place component, add track/via, save, set board outline
-- Schematic (8): load, info, ERC, export netlist/python-bom/PDF/SVG/DXF
-- BOM (1): generate grouped BOM
-- Library (6): list/search footprints/symbols, fp/sym SVG export
-- Marketplace (5): search, categories, download, parts search, parts missing
-- System (2): status, supported commands
+- PCB (17): load, info, list, DRC, exports, place/track/via/save/outline (CRUD needs ipc or tcp)
+- Schematic (8): load, info, ERC, exports
+- BOM (1), Library (6), Marketplace (5), System (2)
+
+## Install extras
+
+```powershell
+uv sync --extra ipc    # kicad-python for headless CRUD
+uv sync --extra dev    # pytest, ruff
+```
+
+## Agent cautions
+
+- Use board **copies** for CRUD experiments (11 nightly may upgrade file format).
+- Manufacturing exports always use stable CLI, not IPC.
+- `pcb_place_component` IPC not wired in v0.3.0 — use TCP bridge if needed.

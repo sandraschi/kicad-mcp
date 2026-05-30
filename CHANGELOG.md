@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.3.0] — 2026-05-29
+
+### Added — Hybrid KiCad install (stable 10.x + 11 nightly IPC)
+
+- **`docs/NIGHTLY_HEADLESS.md`** — full guide: side-by-side install, env vars, Cursor `mcp.json`, backend selection, troubleshooting, file-format warnings
+- **`kicad_install.py`** — discovers Windows KiCad installs; `resolve_stable_cli()` prefers 10.x without `api-server`; `resolve_ipc_cli()` requires `kicad-cli api-server`
+- **`ipc_backend.py`** — headless CRUD session via `kipy.KiCad(headless=True)` and nightly `kicad-cli api-server` child process
+- **`crud_router.py`** — unified dispatch: IPC → TCP `kc_bridge` → none
+- **`scripts/probe_ipc_headless.py`** — probe stable/IPC CLIs, kipy, optional board load
+- **Optional dependency** `[project.optional-dependencies] ipc = ["kicad-python>=0.7"]` — install with `uv sync --extra ipc`
+- **Tests:** `test_kicad_install.py`, `test_crud_router.py` (14 total passing)
+- **Environment variables:** `KICAD_IPC_CLI_PATH`, `KICAD_MCP_CRUD_BACKEND`, `KICAD_MCP_IPC_ENABLED`
+
+### Changed
+
+- **`server.py` lifespan** — picks `crud_backend` (`ipc` | `tcp` | `none`) on startup; shuts down IPC session on exit
+- **`kicad_status` / `/api/v1/status`** — reports `kicad_ipc_cli_path`, `kicad_ipc_version`, `ipc_api_server`, `ipc_python_installed`, `crud_backend` (`bridge_mode` is legacy alias)
+- **`tools/pcb.py`** — CRUD tools route through `crud_send` instead of raw TCP bridge only
+- **Webapp Dashboard** — shows CRUD backend, IPC nightly status, kipy install hint
+- **Fleet:** `MASTER_MCP_CONFIG.json` and user `mcp.json` updated with hybrid env + `--extra ipc`
+- **Docs:** README, SETUP, ARCHITECTURE, KICAD_API, API, llms.txt, AGENTS.md, INSTALL.md; mcp-central-docs project pages refreshed
+
+### IPC headless coverage (v0.3.0)
+
+| Operation | IPC | Notes |
+|-----------|:---:|-------|
+| pcb_load / info / list components/nets/tracks | ✅ | |
+| pcb_get_component | ✅ | |
+| pcb_add_track / pcb_add_via / pcb_save | ✅ | |
+| pcb_set_board_outline | ⚠️ | experimental on nightlies |
+| pcb_place_component | ❌ | falls back to TCP bridge or error |
+| DRC / STEP / Gerber / all exports | — | stable `KICAD_CLI_PATH` lane (unchanged) |
+
+### Known limitations
+
+- Requires **KiCad 11 dev nightly** with `api-server` for headless CRUD; stable 10.0.3 alone stays export-only until nightly is installed
+- Boards saved by 11 nightly may use a newer file format than 10.0.3 — use copies for agent experiments
+- `pcb_place_component` via IPC not wired yet; use `KICAD_MCP_CRUD_BACKEND=tcp` + `kc_bridge.py` as fallback
+
 ## [0.2.0] — 2026-05-25
 
 ### Added

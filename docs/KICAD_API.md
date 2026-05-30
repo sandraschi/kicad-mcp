@@ -112,44 +112,45 @@ board.Remove(track)
 pcbnew.SaveBoard("board_v2.kicad_pcb", board)
 ```
 
-## 3. IPC API (kicad-python) — Recommended Future Path
+## 3. IPC API (kicad-python) — kicad-mcp CRUD lane (v0.3.0+)
 
-KiCad 9+ introduces a new IPC-based Python API via the `kicad-python` PyPI package.
-This replaces SWIG and works outside the KiCad process (via named pipes / Unix sockets).
+KiCad 9+ provides an IPC-based Python API via the `kicad-python` PyPI package.
+kicad-mcp uses it for **headless PCB CRUD** when KiCad 11 nightly and `api-server` are available.
 
-```bash
-pip install kicad-python
+Install in kicad-mcp:
+
+```powershell
+uv sync --extra ipc
 ```
+
+Hybrid env (see [NIGHTLY_HEADLESS.md](./NIGHTLY_HEADLESS.md)):
+
+| Variable | Role |
+|----------|------|
+| `KICAD_CLI_PATH` | Stable 10.x — exports, DRC, ERC (unchanged) |
+| `KICAD_IPC_CLI_PATH` | 11 nightly — spawns headless `api-server` |
+| `KICAD_MCP_CRUD_BACKEND` | `auto` picks IPC → TCP → none |
 
 ```python
 from kipy import KiCad
 
-kicad = KiCad()
-project = kicad.open_project("path/to/project")
-board = project.board
-
-for fp in board.footprints:
-    print(fp.reference, fp.position)
-
-# Create footprint
-from kipy.board_types import Footprint, Vector2
-fp = Footprint()
-fp.reference = "R1"
-fp.position = Vector2.from_mm(10, 10)
-board.add(fp)
-board.commit()
+# kicad-mcp wraps this in ipc_backend.IpcHeadlessBackend
+kicad = KiCad(headless=True, kicad_cli_path=r"C:\Program Files\KiCad\11.0\bin\kicad-cli.exe")
+kicad.ping()
+board = kicad.get_board()
 ```
 
-| Feature | Status | Min KiCad |
-|---------|--------|-----------|
-| Board read (footprints, tracks, nets, zones) | Stable | 9.0 |
-| Board write (add/remove/modify items) | Stable | 9.0 |
-| Footprint placement | Stable | 9.0 |
-| Track/via CRUD | Stable | 9.0 |
-| Zone operations | Stable | 9.0 |
-| Pad/padstack editing | Stable | 9.0 |
-| Schematic support | Upcoming | TBD |
-| Headless (`kicad-cli api-server`) | Upcoming | 11.0 |
+| Feature | kicad-mcp v0.3.0 | Min KiCad |
+|---------|:----------------:|:---------:|
+| Board read (footprints, tracks, nets) | ✅ IPC headless | 11 nightly |
+| Track/via CRUD | ✅ IPC headless | 11 nightly |
+| Save board | ✅ IPC headless | 11 nightly |
+| Footprint placement | ⚠️ TCP bridge only | — |
+| Zone operations | ❌ not wired | 9.0+ IPC |
+| Schematic support | ❌ export CLI only | TBD |
+| Headless (`kicad-cli api-server`) | ✅ wired | 11 nightly |
+
+Legacy GUI path: `kc_bridge.py` on TCP port 11018 (KiCad 10 SWIG) remains fallback until 11.0 stable.
 
 ## 4. Plugin System
 

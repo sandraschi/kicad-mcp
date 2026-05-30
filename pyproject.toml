@@ -1,6 +1,6 @@
 [project]
 name = "kicad-mcp"
-version = "0.1.0"
+version = "0.3.0"
 description = "KiCad MCP server — PCB/schematic design automation via MCP tools and REST API"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -15,8 +15,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+ipc = [
+    "kicad-python>=0.7",
+]
 dev = [
     "pytest>=8.0",
+    "pytest-asyncio>=0.24",
     "ruff>=0.9",
 ]
 
@@ -31,6 +35,7 @@ packages = ["src/kicad_mcp"]
 minversion = "8.0"
 testpaths = ["tests"]
 pythonpath = ["src"]
+asyncio_mode = "auto"
 
 [tool.ruff]
 line-length = 120

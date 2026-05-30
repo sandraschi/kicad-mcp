@@ -24,12 +24,16 @@ def register_pcb_tools(
     mcp,
     state: dict,
     bridge_send,
+    crud_send,
     run_kicad_cli,
     work_dir: str,
     output_dir: str,
     upload_dir: str,
 ):
     """Register all PCB MCP tools on the FastMCP instance."""
+
+    def _has_crud() -> bool:
+        return state.get("crud_backend") in {"ipc", "tcp"}
 
     # ── pcb_load ────────────────────────────────────────────────────────
 
@@ -51,11 +55,13 @@ def register_pcb_tools(
         if not os.path.isfile(path):
             return {"success": False, "message": f"File not found: {file_name}", "data": None}
 
-        if state.get("bridge_mode") == "tcp":
-            resp = await bridge_send("pcb_load", {"path": path})
+        if _has_crud():
+            resp = await crud_send("pcb_load", {"path": path})
             if resp.get("success"):
                 state["pcb_loaded"] = path
                 return {"success": True, "message": f"Loaded {file_name}", "data": resp.get("data")}
+            if not resp.get("fallback"):
+                return {"success": False, "message": resp.get("error", "pcb_load failed"), "data": None}
 
         state["pcb_loaded"] = path
         return {
@@ -85,8 +91,8 @@ def register_pcb_tools(
                 return {"success": False, "message": "No board loaded", "data": None}
         path = os.path.join(upload_dir, file_name) if not os.path.isabs(file_name) else file_name
 
-        if state.get("bridge_mode") == "tcp":
-            resp = await bridge_send("pcb_info", {})
+        if _has_crud():
+            resp = await crud_send("pcb_info", {})
             if resp.get("success"):
                 return resp
 
@@ -114,8 +120,8 @@ def register_pcb_tools(
         ## Examples
         await pcb_list_components()
         """
-        if state.get("bridge_mode") == "tcp":
-            resp = await bridge_send("pcb_list_components", {})
+        if _has_crud():
+            resp = await crud_send("pcb_list_components", {})
             if resp.get("success"):
                 return resp
 
@@ -161,11 +167,15 @@ def register_pcb_tools(
         ## Examples
         await pcb_list_nets()
         """
-        if state.get("bridge_mode") == "tcp":
-            resp = await bridge_send("pcb_list_nets", {})
+        if _has_crud():
+            resp = await crud_send("pcb_list_nets", {})
             if resp.get("success"):
                 return resp
-        return {"success": False, "message": "Requires TCP bridge (KiCad GUI with kc_bridge.py running)", "data": None}
+        return {
+            "success": False,
+            "message": "Requires IPC headless or TCP bridge — see docs/NIGHTLY_HEADLESS.md",
+            "data": None,
+        }
 
     # ── pcb_list_tracks ───────────────────────────────────────────────
 
@@ -181,11 +191,15 @@ def register_pcb_tools(
         ## Examples
         await pcb_list_tracks()
         """
-        if state.get("bridge_mode") == "tcp":
-            resp = await bridge_send("pcb_list_tracks", {})
+        if _has_crud():
+            resp = await crud_send("pcb_list_tracks", {})
             if resp.get("success"):
                 return resp
-        return {"success": False, "message": "Requires TCP bridge", "data": None}
+        return {
+            "success": False,
+            "message": "Requires IPC headless or TCP bridge — see docs/NIGHTLY_HEADLESS.md",
+            "data": None,
+        }
 
     # ── pcb_get_component ─────────────────────────────────────────────
 
@@ -201,10 +215,14 @@ def register_pcb_tools(
         ## Examples
         await pcb_get_component(reference="U1")
         """
-        if state.get("bridge_mode") == "tcp":
-            resp = await bridge_send("pcb_get_component", {"reference": reference})
+        if _has_crud():
+            resp = await crud_send("pcb_get_component", {"reference": reference})
             return resp
-        return {"success": False, "message": "Requires TCP bridge", "data": None}
+        return {
+            "success": False,
+            "message": "Requires IPC headless or TCP bridge — see docs/NIGHTLY_HEADLESS.md",
+            "data": None,
+        }
 
     # ── pcb_drc ────────────────────────────────────────────────────────
 
@@ -224,8 +242,8 @@ def register_pcb_tools(
         """
         path = os.path.join(upload_dir, file_name) if not os.path.isabs(file_name) else file_name
 
-        if state.get("bridge_mode") == "tcp":
-            resp = await bridge_send("pcb_drc", {})
+        if _has_crud():
+            resp = await crud_send("pcb_drc", {})
             if resp.get("success"):
                 return resp
             if not resp.get("fallback"):
@@ -263,8 +281,8 @@ def register_pcb_tools(
         path = os.path.join(upload_dir, file_name) if not os.path.isabs(file_name) else file_name
         output_path = os.path.join(output_dir, output_name)
 
-        if state.get("bridge_mode") == "tcp":
-            resp = await bridge_send("pcb_export_step", {"path": output_path})
+        if _has_crud():
+            resp = await crud_send("pcb_export_step", {"path": output_path})
             if resp.get("success"):
                 size_kb = os.path.getsize(output_path) / 1024 if os.path.isfile(output_path) else 0
                 return {"success": True, "output": output_name, "data": {"path": output_path, "size_kb": size_kb}}
@@ -628,7 +646,7 @@ def register_pcb_tools(
         """Place a component footprint on the PCB.
 
         Loads a footprint from a KiCad library and places it at the given position.
-        Requires TCP bridge (KiCad GUI with kc_bridge.py).
+        Requires IPC headless or TCP bridge (KiCad GUI with kc_bridge.py).
 
         ## Return Format
         {"success": bool, "data": {"reference": str, "footprint": str}}
@@ -636,7 +654,7 @@ def register_pcb_tools(
         ## Examples
         await pcb_place_component(library="Resistor_SMD", footprint="R_US_0603", reference="R1", value="10k", x_mm=50, y_mm=30)
         """
-        resp = await bridge_send(
+        resp = await crud_send(
             "pcb_place_component",
             {
                 "library": library,
@@ -665,7 +683,7 @@ def register_pcb_tools(
         """Add a track segment to the PCB.
 
         Creates a copper track between two points on the specified layer.
-        Requires TCP bridge.
+        Requires IPC headless or TCP bridge.
 
         ## Return Format
         {"success": bool, "data": {"type": str, "length_mm": float}}
@@ -673,7 +691,7 @@ def register_pcb_tools(
         ## Examples
         await pcb_add_track(start_x_mm=50, start_y_mm=30, end_x_mm=60, end_y_mm=30, width_mm=0.25)
         """
-        resp = await bridge_send(
+        resp = await crud_send(
             "pcb_add_track",
             {
                 "start_mm": {"x": start_x_mm, "y": start_y_mm},
@@ -698,7 +716,7 @@ def register_pcb_tools(
         """Add a through via to the PCB.
 
         Creates a plated through-hole via at the given position.
-        Requires TCP bridge.
+        Requires IPC headless or TCP bridge.
 
         ## Return Format
         {"success": bool, "data": {"x_mm": float, "y_mm": float, "diameter_mm": float}}
@@ -706,7 +724,7 @@ def register_pcb_tools(
         ## Examples
         await pcb_add_via(x_mm=55, y_mm=30, diameter_mm=0.6, drill_mm=0.3)
         """
-        resp = await bridge_send(
+        resp = await crud_send(
             "pcb_add_via",
             {
                 "position_mm": {"x": x_mm, "y": y_mm},
@@ -728,7 +746,7 @@ def register_pcb_tools(
         """Save the current board to a .kicad_pcb file.
 
         Persists all in-memory changes (placed components, tracks, vias, board outline).
-        Requires TCP bridge.
+        Requires IPC headless or TCP bridge.
 
         ## Return Format
         {"success": bool, "data": {"path": str, "saved": bool}}
@@ -738,7 +756,7 @@ def register_pcb_tools(
         await pcb_save(file_name="my_board_v2.kicad_pcb")
         """
         path = os.path.join(upload_dir, file_name) if file_name else ""
-        resp = await bridge_send("pcb_save", {"path": path})
+        resp = await crud_send("pcb_save", {"path": path})
         return resp
 
     # ── pcb_set_board_outline ─────────────────────────────────────────
@@ -752,7 +770,7 @@ def register_pcb_tools(
         """Set the PCB board outline (Edge.Cuts) from a list of points.
 
         Creates a closed polygon on the Edge.Cuts layer defining the board shape.
-        Requires TCP bridge.
+        Requires IPC headless or TCP bridge.
 
         ## Return Format
         {"success": bool, "data": {"vertices": int}}
@@ -760,7 +778,7 @@ def register_pcb_tools(
         ## Examples
         await pcb_set_board_outline(points=[{"x": 0, "y": 0}, {"x": 100, "y": 0}, {"x": 100, "y": 80}, {"x": 0, "y": 80}])
         """
-        resp = await bridge_send("pcb_set_board_outline", {"points": points})
+        resp = await crud_send("pcb_set_board_outline", {"points": points})
         return resp
 
     # ── Return tool dict ───────────────────────────────────────────────

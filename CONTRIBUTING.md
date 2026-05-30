@@ -24,6 +24,16 @@ See [docs/SETUP.md](docs/SETUP.md) for full setup instructions.
 
 ## Testing
 
-- Python: `just test` (pytest)
+- Python: `just test` (pytest — includes `test_kicad_install`, `test_crud_router`)
+- Hybrid probe: `uv run python -m kicad_mcp.scripts.probe_ipc_headless`
 - E2E: `just e2e` (Playwright)
-- All new tools should include smoke tests
+- IPC changes: run probe + `kicad_status` after installing 11 nightly
+
+## Hybrid KiCad development
+
+When working on IPC/CRUD features:
+
+1. `uv sync --extra ipc`
+2. Install KiCad 11 nightly side-by-side with 10.0.x
+3. Use board **copies** only
+4. Document env vars in `docs/NIGHTLY_HEADLESS.md` and fleet `HYBRID_INSTALL.md`

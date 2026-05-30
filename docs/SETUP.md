@@ -45,7 +45,18 @@ uv run python -m kicad_mcp.server --mode dual --port 11016
 npx --prefix webapp vite --port 11017
 ```
 
-### 5. TCP Bridge (for board editing)
+### 5. PCB CRUD backend (pick one)
+
+**Option A — Headless IPC (KiCad 11 nightly, no GUI):**
+
+```powershell
+uv sync --extra ipc
+uv run python -m kicad_mcp.scripts.probe_ipc_headless
+```
+
+Set `KICAD_CLI_PATH` (stable 10.x) and `KICAD_IPC_CLI_PATH` (11 nightly). Full guide: [NIGHTLY_HEADLESS.md](./NIGHTLY_HEADLESS.md).
+
+**Option B — TCP bridge (KiCad 10 GUI + legacy SWIG):**
 
 To enable PCB CRUD (place components, route tracks, add vias), run `kc_bridge.py` inside KiCad:
 
@@ -68,7 +79,10 @@ See [native/README.md](../native/README.md) for building a standalone desktop in
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `KICAD_CLI_PATH` | auto-detect | Path to kicad-cli.exe |
+| `KICAD_CLI_PATH` | auto (10.x stable) | Export/DRC/ERC lane |
+| `KICAD_IPC_CLI_PATH` | auto (11 nightly) | Headless IPC CRUD lane |
+| `KICAD_MCP_CRUD_BACKEND` | `auto` | `auto` \| `ipc` \| `tcp` \| `none` |
+| `KICAD_MCP_IPC_ENABLED` | `auto` | Force IPC on/off |
 | `KC_BRIDGE_PORT` | 11018 | TCP port for KiCad bridge |
 | `KICAD_MCP_WORK_DIR` | `%TEMP%\kicad_mcp_work` | Upload/output directory |
 | `GITHUB_TOKEN` | — | For marketplace GitHub API (higher rate limit) |

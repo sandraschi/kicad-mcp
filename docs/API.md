@@ -26,7 +26,22 @@ Base URL: `http://localhost:11016/api/v1`
 
 ```
 GET /api/v1/status
-→ {"server": "kicad-mcp", "version": "0.1.0", "kicad_available": bool, ...}
+→ {
+  "server": "kicad-mcp",
+  "version": "0.3.0",
+  "kicad_available": bool,
+  "kicad_version": str,
+  "kicad_cli_path": str,
+  "kicad_ipc_cli_path": str | null,
+  "kicad_ipc_version": str | null,
+  "ipc_api_server": bool,
+  "ipc_python_installed": bool,
+  "crud_backend": "ipc" | "tcp" | "none",
+  "bridge_mode": "ipc" | "tcp" | "none",
+  "pcb_loaded": str | null,
+  "sch_loaded": str | null,
+  "uptime_s": int
+}
 ```
 
 ### List Tools
@@ -131,5 +146,23 @@ All 39 tools use the standard return schema:
 
 | Tool | Args | Returns |
 |------|------|---------|
-| `kicad_status` | — | {kicad_available, version, bridge_mode, ...} |
+| `kicad_status` | — | See below |
 | `kicad_supported_commands` | — | {commands: [{name, description}]} |
+
+#### `kicad_status` response (v0.3.0)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | bool | Always true if server running |
+| `kicad_available` | bool | Stable export CLI found |
+| `kicad_cli_path` | str | Path to stable `kicad-cli` (10.x preferred) |
+| `kicad_ipc_cli_path` | str \| null | Nightly CLI with `api-server`, if found |
+| `version` | str | Stable KiCad version string |
+| `kicad_ipc_version` | str \| null | Nightly version string |
+| `ipc_api_server` | bool | Nightly exposes `api-server` subcommand |
+| `ipc_python_installed` | bool | `kicad-python` (kipy) importable |
+| `crud_backend` | str | Active CRUD lane: `ipc`, `tcp`, or `none` |
+| `bridge_mode` | str | Legacy alias of `crud_backend` |
+| `work_dir` | str | `%TEMP%\kicad_mcp_work` or override |
+| `uploads_dir` / `outputs_dir` | str | Upload and export directories |
+| `uptime_s` | int | Server uptime seconds |

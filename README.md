@@ -2,7 +2,7 @@
 
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12+-blue.svg)](pyproject.toml)
-[![KiCad 8+](https://img.shields.io/badge/KiCad-8%2B-orange.svg)](https://www.kicad.org)
+[![KiCad 10+ / 11 nightly IPC](https://img.shields.io/badge/KiCad-hybrid%2010%2B%2F11-orange.svg)](docs/NIGHTLY_HEADLESS.md)
 [![MCP Server](https://img.shields.io/badge/MCP%20Server-glama.ai-blue)](https://glama.ai/mcp/servers/...)
 [![smithery](https://img.shields.io/badge/dynamic/json?url=https://smithery.ai/api/v1/servers/kicad-mcp&query=downloads&label=Smithery)](https://smithery.ai/server/kicad-mcp)
 [![GitHub last commit](https://img.shields.io/github/last-commit/sandraschi/kicad-mcp)](https://github.com/sandraschi/kicad-mcp)
@@ -34,6 +34,7 @@ just serve
 - [Tool Catalog (all 39 tools)](docs/TOOLS.md)
 - [REST + MCP API Reference](docs/API.md)
 - [Architecture Deep-Dive](docs/ARCHITECTURE.md)
+- [Hybrid nightly + headless IPC](docs/NIGHTLY_HEADLESS.md) — KiCad 10 stable exports + 11 nightly CRUD
 - [KiCad Scripting & API Reference](docs/KICAD_API.md)
 - [KiCad Plugin Ecosystem](docs/KICAD_PLUGINS.md)
 - [Contributing](CONTRIBUTING.md)
@@ -52,11 +53,20 @@ just serve
 
 ## KiCad Integration
 
-Three execution modes:
+Hybrid install (recommended on Windows):
 
-1. **kicad-cli** — headless, always available if KiCad installed
-2. **TCP bridge** (`kc_bridge.py`) — pcbnew BOARD CRUD (requires KiCad GUI)
-3. **IPC API** (upcoming) — kicad-python for KiCad 9+ headless mode
+| Lane | KiCad | Used for |
+|------|-------|----------|
+| **Stable export** | 10.0.x `KICAD_CLI_PATH` | Gerber, STEP, DRC/ERC, BOM, library CLI |
+| **Headless CRUD** | 11 nightly `KICAD_IPC_CLI_PATH` | Load/save, tracks, vias via `kicad-python` |
+| **Legacy TCP** | 10 GUI + `kc_bridge.py` | Fallback CRUD until 11 stable |
+
+See [docs/NIGHTLY_HEADLESS.md](docs/NIGHTLY_HEADLESS.md) for side-by-side install, env vars, and probe script.
+
+```powershell
+uv sync --extra ipc
+uv run python -m kicad_mcp.scripts.probe_ipc_headless
+```
 
 ## KiCad vs Professional EDA Tools
 
