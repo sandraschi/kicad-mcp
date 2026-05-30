@@ -3,8 +3,6 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12+-blue.svg)](pyproject.toml)
 [![KiCad 10+ / 11 nightly IPC](https://img.shields.io/badge/KiCad-hybrid%2010%2B%2F11-orange.svg)](docs/NIGHTLY_HEADLESS.md)
-[![MCP Server](https://img.shields.io/badge/MCP%20Server-glama.ai-blue)](https://glama.ai/mcp/servers/...)
-[![smithery](https://img.shields.io/badge/dynamic/json?url=https://smithery.ai/api/v1/servers/kicad-mcp&query=downloads&label=Smithery)](https://smithery.ai/server/kicad-mcp)
 [![GitHub last commit](https://img.shields.io/github/last-commit/sandraschi/kicad-mcp)](https://github.com/sandraschi/kicad-mcp)
 
 AI-driven PCB/schematic design automation via **FastMCP 3.2**.
@@ -20,13 +18,6 @@ just bootstrap
 just serve
 # Open http://localhost:11017
 ```
-
-## Badges
-
-| | |
-|---|---|
-| [Glama MCP Server](https://glama.ai/mcp/servers/...) | ![MCP Server](https://img.shields.io/badge/MCP%20Server-glama.ai-blue) |
-| Install via Smithery | `npx @smithery/cli install kicad-mcp` |
 
 ## Table of Contents
 
