@@ -11,6 +11,45 @@ manufacturing export (Gerber, STEP, IPC-2581, ODB++), 3D visualization (GLB, VRM
 pick-and-place, library search, marketplace (GitHub/Kitspace/SnapEDA), and **live PCB
 board editing** (place components, route tracks, add vias, set board outline, save).
 
+## How it runs
+
+| Mode | Host app | When |
+|------|----------|------|
+| **Export lane (default)** | Stable `kicad-cli` (KiCad 10.x), no pcbnew window | Gerber, STEP, GLB, DRC/ERC, BOM, schematic exports, library CLI |
+| **Headless CRUD** | KiCad 11 nightly `kicad-cli api-server` + `kicad-python` | Load/save board, tracks, vias — no GUI |
+| **Legacy TCP CRUD (optional)** | KiCad 10 GUI + `kc_bridge.py` on port 11018 | Fallback when nightly IPC unavailable; footprint placement |
+| **Export-only** | Stable CLI only | CRUD tools return guidance if no IPC/TCP backend |
+
+**You do not need to open KiCad’s pcbnew window** for exports, DRC, Gerber, or STEP — the server calls stable `kicad-cli` subprocesses automatically. PCB editing uses either headless IPC (11 nightly) or the legacy GUI bridge.
+
+Install [KiCad](https://www.kicad.org/download/) separately (hybrid 10.x + optional 11 nightly); it is never bundled. Full setup: [docs/NIGHTLY_HEADLESS.md](docs/NIGHTLY_HEADLESS.md).
+
+> **Headless by default for manufacturing** — DRC, Gerber, STEP, and BOM run on stable `KICAD_CLI_PATH` with no GUI. CRUD picks `ipc` → `tcp` → `none` at startup (`KICAD_MCP_CRUD_BACKEND=auto|ipc|tcp|none`). Probe: `uv run python -m kicad_mcp.scripts.probe_ipc_headless`.
+
+```powershell
+uv sync --extra ipc
+uv run python -m kicad_mcp.scripts.probe_ipc_headless
+```
+
+## Hands-in / Hands-out
+
+| Direction | Artifacts | Notes |
+|-----------|-----------|-------|
+| **Hands-in** | `.kicad_pcb`, `.kicad_sch` | Webapp upload or `pcb_load` / `sch_load` — copies land in `%TEMP%\kicad_mcp_work\uploads\` |
+| **Hands-in** | Footprint/symbol refs, net names | Tool params; marketplace downloads via `marketplace_*` |
+| **Hands-out** | Gerber, ODB++, IPC-2581, pick-and-place CSV | `pcb_export_*` — **headless** (stable CLI) |
+| **Hands-out** | STEP, GLB, VRML, DXF, SVG, PDF | 3D/mechanical handoff — **headless** |
+| **Hands-out** | DRC/ERC JSON, grouped BOM (JSON/CSV) | `pcb_drc`, `sch_erc`, `bom_generate` — **headless** |
+| **Hands-out** | Modified `.kicad_pcb` | `pcb_save` after CRUD — IPC headless or TCP bridge |
+
+### Fleet pipelines (downstream)
+
+| Downstream MCP | Takes from kicad-mcp |
+|----------------|----------------------|
+| [freecad-mcp](https://github.com/sandraschi/freecad-mcp) | STEP board / enclosure models |
+| [chip-design-mcp](https://github.com/sandraschi/chip-design-mcp) | Netlists, BOM, layout metadata |
+| Fabrication | Gerber, ODB++, IPC-2581, POS files |
+
 ## Quick Start
 
 ```powershell
@@ -21,6 +60,7 @@ just serve
 
 ## Table of Contents
 
+- [How it runs](#how-it-runs) · [Hands-in / Hands-out](#hands-in--hands-out)
 - [Setup & Configuration](docs/SETUP.md)
 - [Tool Catalog (all 39 tools)](docs/TOOLS.md)
 - [REST + MCP API Reference](docs/API.md)
@@ -41,23 +81,6 @@ just serve
 | **Library** | 6 | list/search footprints/symbols, export SVG |
 | **Marketplace** | 5 | search (GitHub/Kitspace/SnapEDA), download, find parts |
 | **System** | 2 | status, supported commands |
-
-## KiCad Integration
-
-Hybrid install (recommended on Windows):
-
-| Lane | KiCad | Used for |
-|------|-------|----------|
-| **Stable export** | 10.0.x `KICAD_CLI_PATH` | Gerber, STEP, DRC/ERC, BOM, library CLI |
-| **Headless CRUD** | 11 nightly `KICAD_IPC_CLI_PATH` | Load/save, tracks, vias via `kicad-python` |
-| **Legacy TCP** | 10 GUI + `kc_bridge.py` | Fallback CRUD until 11 stable |
-
-See [docs/NIGHTLY_HEADLESS.md](docs/NIGHTLY_HEADLESS.md) for side-by-side install, env vars, and probe script.
-
-```powershell
-uv sync --extra ipc
-uv run python -m kicad_mcp.scripts.probe_ipc_headless
-```
 
 ## KiCad vs Professional EDA Tools
 
