@@ -1,4 +1,4 @@
-set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+﻿set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
 export NAME := "KiCad MCP"
 export DESC := "PCB/schematic design automation via MCP tools and REST API"
@@ -9,7 +9,7 @@ export HOST := "0.0.0.0"
 # ── Project Configuration ─────────────────────────────────────────────────────
 
 default:
-    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File ../mcp-central-docs/scripts/just-dashboard.ps1 -Path .
+    @just --list
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
@@ -83,3 +83,4 @@ e2e:
 
 health:
     curl http://localhost:11016/api/v1/status
+

@@ -1,4 +1,4 @@
-# start.ps1 — KiCad MCP + Webapp (SOTA 2026)
+﻿# start.ps1 - KiCad MCP + Webapp (SOTA 2026)
 param([switch]$Headless, [switch]$BackendOnly, [switch]$NoBrowser)
 $ErrorActionPreference = "Stop"
 $ScriptRoot = Split-Path -Parent $PSCommandPath
@@ -6,56 +6,53 @@ $BackendPort = 11016
 $FrontendPort = 11017
 $env:KICAD_MCP_WORK_DIR = "$env:TEMP\kicad_mcp_work"
 
-# Port zombie clearing
-Get-NetTCPConnection -LocalPort $BackendPort -ErrorAction SilentlyContinue |
-    ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
-Get-NetTCPConnection -LocalPort $FrontendPort -ErrorAction SilentlyContinue |
-    ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
-Get-NetTCPConnection -LocalPort 11018 -ErrorAction SilentlyContinue |
-    ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+$FleetStartPath = Join-Path $ScriptRoot "scripts\FleetStartMode.ps1"
+if (-not (Test-Path -LiteralPath $FleetStartPath)) {
+    Write-Host "ERROR: Missing vendored launcher helper: $FleetStartPath" -ForegroundColor Red
+    exit 1
+}
+. $FleetStartPath
+Stop-FleetPortSquatters -Ports @($BackendPort, $FrontendPort, 11018) -Label "kicad-mcp"
 
-# Start backend via Start-Job with proper working directory
-$BackendJob = Start-Job -Name "kicad-mcp-backend" -ScriptBlock {
-    param($Root, $Port)
-    Set-Location $Root
-    uv run python -m kicad_mcp.server --mode dual --port $Port
-} -ArgumentList $ScriptRoot, $BackendPort
+Write-Host "Starting KiCad MCP backend on port $BackendPort..." -ForegroundColor Cyan
+$backendCmd = "Set-Location '$ScriptRoot'; uv run --project '$ScriptRoot' python -m kicad_mcp.server --mode dual --port $BackendPort"
+$BackendProc = Start-Process powershell -ArgumentList "-NoProfile", "-WindowStyle", "Normal", "-Command", $backendCmd -PassThru
 
-# Readiness poll
-Write-Host "Waiting for backend on port $BackendPort..." -ForegroundColor Cyan
+Write-Host "Waiting for backend on port $BackendPort..." -ForegroundColor Gray
+$backendReady = $false
 for ($i = 0; $i -lt 60; $i++) {
     try {
-        $r = Invoke-WebRequest -Uri "http://127.0.0.1:$BackendPort/api/v1/status" -TimeoutSec 2 -UseBasicParsing -ErrorAction SilentlyContinue
-        if ($r.StatusCode -eq 200) { break }
+        $r = Invoke-WebRequest -Uri "http://127.0.0.1:$BackendPort/api/v1/status" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
+        if ($r.StatusCode -eq 200) { $backendReady = $true; break }
     } catch {}
     Start-Sleep 1
 }
+if ($backendReady) {
+    Write-Host "Backend ready on http://127.0.0.1:$BackendPort" -ForegroundColor Green
+} else {
+    Write-Host "Backend did not return HTTP 200 from /api/v1/status - check logs." -ForegroundColor Yellow
+}
 
-if (-not $BackendOnly) {
-    $WebRoot = Join-Path $ScriptRoot "webapp"
-    Start-Process -NoNewWindow -FilePath "npx" -ArgumentList "vite --port $FrontendPort" -WorkingDirectory $WebRoot
+if ($BackendOnly) {
+    while (-not $BackendProc.HasExited) { Start-Sleep 2 }
+    exit
+}
 
-    if (-not $NoBrowser) {
-        for ($i = 0; $i -lt 30; $i++) {
-            try {
-                $r = Invoke-WebRequest -Uri "http://127.0.0.1:$FrontendPort" -TimeoutSec 2 -UseBasicParsing -ErrorAction SilentlyContinue
-                if ($r.StatusCode -eq 200) { break }
-            } catch {}
-            Start-Sleep 1
-        }
-        Start-Process "http://127.0.0.1:$FrontendPort"
-    }
+$WebRoot = Join-Path $ScriptRoot "webapp"
+if (-not (Test-Path (Join-Path $WebRoot "node_modules"))) {
+    Set-Location $WebRoot
+    npm install
+}
+
+if (-not $NoBrowser) {
+    $frontendUrl = "http://127.0.0.1:$FrontendPort/"
+    $pollAndOpen = "for (`$i = 0; `$i -lt 60; `$i++) { try { `$null = Invoke-WebRequest -Uri '$frontendUrl' -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop; Start-Process '$frontendUrl'; exit } catch { Start-Sleep -Seconds 1 } }"
+    Start-Process powershell -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "-Command", $pollAndOpen
 }
 
 Write-Host "KiCad MCP: http://localhost:$BackendPort/api/v1/status" -ForegroundColor Green
 Write-Host "Webapp:    http://localhost:$FrontendPort" -ForegroundColor Green
-Write-Host "MCP SSE:   http://localhost:$BackendPort/sse" -ForegroundColor Green
+Write-Host "Starting Vite frontend on port $FrontendPort..." -ForegroundColor Green
+Set-Location $WebRoot
+npm run dev -- --port $FrontendPort --host --strictPort
 
-# Keep-alive
-while ($true) {
-    if ($BackendJob.State -eq "Completed" -or $BackendJob.State -eq "Failed") {
-        Receive-Job $BackendJob
-        break
-    }
-    Start-Sleep 2
-}
