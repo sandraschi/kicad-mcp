@@ -14,6 +14,8 @@ if (-not (Test-Path -LiteralPath $FleetStartPath)) {
 . $FleetStartPath
 Stop-FleetPortSquatters -Ports @($BackendPort, $FrontendPort, 11018) -Label "kicad-mcp"
 
+if (-not (Assert-FleetPortsAvailable -Ports @($BackendPort, $FrontendPort, 11018) -Label "kicad-mcp")) { exit 1 }
+
 Write-Host "Starting KiCad MCP backend on port $BackendPort..." -ForegroundColor Cyan
 $backendCmd = "Set-Location '$ScriptRoot'; uv run --project '$ScriptRoot' python -m kicad_mcp.server --mode dual --port $BackendPort"
 $BackendProc = Start-Process powershell -ArgumentList "-NoProfile", "-WindowStyle", "Normal", "-Command", $backendCmd -PassThru
@@ -55,4 +57,5 @@ Write-Host "Webapp:    http://localhost:$FrontendPort" -ForegroundColor Green
 Write-Host "Starting Vite frontend on port $FrontendPort..." -ForegroundColor Green
 Set-Location $WebRoot
 npm run dev -- --port $FrontendPort --host --strictPort
+
 
