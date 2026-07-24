@@ -9,6 +9,8 @@ import MarketplacePage from './pages/MarketplacePage';
 import FilesPage from './pages/FilesPage';
 import DemoPage from './pages/DemoPage';
 import StatusPage from './pages/StatusPage';
+import ChatPage from './pages/ChatPage';
+import FabPage from './pages/FabPage';
 
 export default function App() {
   return (
@@ -23,6 +25,8 @@ export default function App() {
         <Route path="/files" element={<FilesPage />} />
         <Route path="/demo" element={<DemoPage />} />
         <Route path="/status" element={<StatusPage />} />
+        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/fab" element={<FabPage />} />
       </Routes>
     </AppLayout>
   );

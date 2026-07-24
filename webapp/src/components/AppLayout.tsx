@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Activity, CircuitBoard, Cpu, FileText, FolderOpen, Library, RefreshCw, ShoppingBag, Sparkles } from 'lucide-react';
+import { Activity, CircuitBoard, Cpu, FileText, FolderOpen, Library, MessageSquare, Package, RefreshCw, ShoppingBag, Sparkles } from 'lucide-react';
 import { useConnection } from '../store/connection';
 import { useZoom } from '../hooks/useZoom';
 import { API_BASE } from '../lib/api';
@@ -9,12 +9,14 @@ const BACKOFF = [1, 2, 4, 8, 16, 30];
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: Activity },
+  { to: '/chat', label: 'Chat', icon: MessageSquare },
   { to: '/pcb', label: 'PCB', icon: CircuitBoard },
   { to: '/schematic', label: 'Schematic', icon: Cpu },
   { to: '/bom', label: 'BOM', icon: FileText },
   { to: '/library', label: 'Library', icon: Library },
   { to: '/marketplace', label: 'Market', icon: ShoppingBag },
   { to: '/files', label: 'Files', icon: FolderOpen },
+  { to: '/fab', label: 'Fab', icon: Package },
   { to: '/demo', label: 'Demo', icon: Sparkles },
   { to: '/status', label: 'Status', icon: Activity },
 ];

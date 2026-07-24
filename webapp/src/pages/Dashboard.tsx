@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../lib/api';
 import { CircuitBoard, Cpu, Layers, Wrench } from 'lucide-react';
+import PcbViewer3D from '../components/PcbViewer3D';
 
 export default function Dashboard() {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
@@ -20,7 +21,16 @@ export default function Dashboard() {
 
   return (
     <div data-testid="dashboard">
-      <h1 className="text-2xl font-bold mb-6">KiCad MCP Dashboard</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">KiCad MCP Dashboard</h1>
+      </div>
+
+      {/* 3D Board Preview */}
+      <div className="mb-6 bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+        <div className="px-4 py-2 border-b border-gray-800 text-xs text-gray-500">3D Board Preview</div>
+        <PcbViewer3D toolCount={tools.length} boardAvailable={!!status?.kicad_available} />
+      </div>
+
       <div className="grid grid-cols-4 gap-4 mb-8">
         {cards.map(({ label, value, icon: Icon, color }) => (
           <div key={label} className={`bg-gray-900 border border-gray-800 rounded-lg p-4`} data-testid={`kpi-${label.toLowerCase().replace(/\s+/g, '-')}`}>

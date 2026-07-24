@@ -22,13 +22,16 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastmcp import FastMCP
+from pydantic import BaseModel
 
 from kicad_mcp.crud_router import crud_send as _crud_send_impl
+from kicad_mcp.fab_router import router as fab_router
 from kicad_mcp.ipc_backend import IpcHeadlessBackend
 from kicad_mcp.kicad_install import (
     ipc_enabled,
@@ -292,6 +295,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(fab_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -483,6 +488,112 @@ async def api_diagnostics():
 @app.get("/api/v1/tools")
 async def api_list_tools():
     return {"tools": sorted(_all_tools.keys()), "count": len(_all_tools)}
+
+
+@app.get("/api/v1/skills")
+async def api_list_skills():
+    skills_dir = Path(__file__).parent / "skills"
+    if not skills_dir.is_dir():
+        return {"skills": [], "count": 0}
+    skills = []
+    for d in skills_dir.iterdir():
+        skill_md = d / "SKILL.md"
+        if skill_md.is_file():
+            skills.append({"name": d.name, "title": d.name.replace("-", " ").title()})
+    return {"skills": skills, "count": len(skills)}
+
+
+@app.get("/api/v1/skills/{skill_name}")
+async def api_get_skill(skill_name: str):
+    skill_path = Path(__file__).parent / "skills" / skill_name / "SKILL.md"
+    if skill_path.is_file():
+        return {"name": skill_name, "content": skill_path.read_text(encoding="utf-8")}
+    return {"name": skill_name, "content": "", "error": "not found"}
+
+
+@app.get("/api/v1/llm/discover")
+async def api_llm_discover():
+    """Probe Ollama and LM Studio, return detected providers + models."""
+    providers = []
+    async with httpx.AsyncClient(timeout=3) as client:
+        # Ollama
+        try:
+            r = await client.get("http://127.0.0.1:11434/api/tags")
+            if r.status_code == 200:
+                models = [m["name"] for m in r.json().get("models", [])]
+                providers.append(
+                    {
+                        "name": "ollama",
+                        "port": 11434,
+                        "base": "http://127.0.0.1:11434",
+                        "models": models,
+                        "status": "detected",
+                    }
+                )
+        except Exception:
+            providers.append({"name": "ollama", "port": 11434, "status": "not_found"})
+        # LM Studio
+        try:
+            r = await client.get("http://127.0.0.1:1234/v1/models")
+            if r.status_code == 200:
+                models = [m["id"] for m in r.json().get("data", [])]
+                providers.append(
+                    {
+                        "name": "lm_studio",
+                        "port": 1234,
+                        "base": "http://127.0.0.1:1234",
+                        "models": models,
+                        "status": "detected",
+                    }
+                )
+        except Exception:
+            providers.append({"name": "lm_studio", "port": 1234, "status": "not_found"})
+    return {"providers": providers, "count": len(providers)}
+
+
+LLM_CHAT_MODEL = os.environ.get("KICAD_MCP_LLM_MODEL", "llama3.2:latest")
+LLM_CHAT_BASE = os.environ.get("KICAD_MCP_LLM_BASE", "http://127.0.0.1:11434")
+
+
+class ChatRequest(BaseModel):
+    model: str = LLM_CHAT_MODEL
+    system: str = ""
+    messages: list[dict] = []
+    stream: bool = False
+
+
+@app.post("/api/v1/llm/chat")
+async def api_llm_chat(req: ChatRequest):
+    """Proxy chat completion to local LLM (Ollama or OpenAI-compatible)."""
+    base_url = LLM_CHAT_BASE
+    model = req.model
+    messages = [*([{"role": "system", "content": req.system}] if req.system else []), *req.messages]
+
+    # Try Ollama first
+    async with httpx.AsyncClient(timeout=60) as client:
+        try:
+            r = await client.post(f"{base_url}/api/chat", json={"model": model, "messages": messages, "stream": False})
+            if r.status_code == 200:
+                data = r.json()
+                return {
+                    "choices": [
+                        {"message": {"role": "assistant", "content": data.get("message", {}).get("content", "")}}
+                    ]
+                }
+        except Exception:
+            pass
+        # Fallback: OpenAI-compatible endpoint
+        try:
+            r = await client.post(
+                f"{base_url}/v1/chat/completions", json={"model": model, "messages": messages, "stream": False}
+            )
+            if r.status_code == 200:
+                return r.json()
+        except Exception:
+            pass
+    return {
+        "choices": [{"message": {"role": "assistant", "content": "No local LLM detected. Start Ollama or LM Studio."}}]
+    }
 
 
 @app.post("/api/v1/control/{tool_name}")

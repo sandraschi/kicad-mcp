@@ -1,5 +1,5 @@
 
-## [Unreleased] — 2026-07-24
+## [Unreleased] — 2026-07-24 (v3 — Chat + 3D Viewer + Fab Pipeline)
 
 ### Fixed
 - CRITICAL: CORS allow_origin_regex now unconditional with Tailscale/LAN/CGNAT coverage
@@ -18,6 +18,13 @@
 - ruff: Added as dev dependency, fixed lint warnings, formatted all source
 
 ### Added
+- **AI PCB Design Co-Pilot**: Full Chat page with skill-first system prompt, 4 personalities (PCB Designer, Component Specialist, DFM Reviewer, Custom), localStorage conversation memory (100-msg cap), example prompts grouped by category, .txt export, LLM provider status indicator, and Ollama/LM Studio auto-discovery
+- **3D PCB Viewer**: Three.js interactive board preview on the Dashboard with orbit controls, procedural PCB rendering (traces, components, caps), dark theme, and responsive resize
+- **Fabrication Pipeline**: New /fab page with Gerber export + zip, order form (fab house, layers, quantity, color, dimensions), JLCPCB pricing estimate, SQLite-backed order history
+- **Backend LLM endpoints**: GET /api/v1/llm/discover (probes Ollama :11434 + LM Studio :1234), POST /api/v1/llm/chat (proxy to local LLM with Ollama/OAI-compatible fallback), GET /api/v1/skills (list + fetch SKILL.md content)
+- **PCB Design Skill**: Full SKILL.md with tool categories, design workflow guidance, example sequences for placement/routing/export
+- **Fab Router**: SQLite-backed fab_orders table, POST /api/v1/fab/export (zip Gerbers), POST /api/v1/fab/order, GET /api/v1/fab/orders
+- SPEC.md: Full product specification for all 6 proposed features
 - .env.example: Template for KiCad configuration (no real secrets)
 - glama.json: Fleet MCP registry metadata
 - llms-full.txt: Comprehensive LLM context document
