@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "SessionStart": [{
+      "matcher": "",
+      "hooks": [{
+        "type": "text",
+        "text": "## Session Context (KiCad MCP)\n\nYou have access to KiCad PCB/schematic design automation tools (41 MCP tools across 6 categories):\n- PCB tools: info, DRC, export (Gerber/STEP/PDF/SVG), place components, add tracks/vias\n- Schematic: info, ERC, export (netlist/PDF/SVG)\n- Library: search footprints and symbols\n- Marketplace: search and download from GitHub/SnapEDA/kitspace\n\n**Before starting work:**\n1. Check KiCad status: kicad_status()\n2. List available commands: kicad_supported_commands()\n\n**At end of work:**\n- Review PCB/design exports and save outputs\n- Save work to outputs directory via pcb_save/sch_export_*"
+      }]
+    }]
+  }
+}

@@ -38,9 +38,7 @@ class IpcHeadlessBackend:
                     self._loaded_path = None
 
     async def send(self, method: str, params: dict | None = None) -> dict:
-        return await asyncio.get_running_loop().run_in_executor(
-            None, self._dispatch_sync, method, params or {}
-        )
+        return await asyncio.get_running_loop().run_in_executor(None, self._dispatch_sync, method, params or {})
 
     def _ensure_kicad(self, preload_path: str | None = None) -> dict | None:
         from kipy import KiCad
@@ -50,7 +48,7 @@ class IpcHeadlessBackend:
             try:
                 self._kicad.close()
             except Exception:
-                pass
+                logger.exception("Failed to close KiCad IPC session")
             self._kicad = None
             self._loaded_path = None
 

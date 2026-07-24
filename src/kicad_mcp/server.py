@@ -288,13 +288,22 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="KiCad MCP",
     description="KiCad PCB/schematic design automation — MCP tools + REST API",
-    version="0.1.0",
+    version="0.3.0",
     lifespan=lifespan,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://127.0.0.1:11016",
+        "http://127.0.0.1:11017",
+        "http://localhost:11016",
+        "http://localhost:11017",
+        "http://tauri.localhost",
+        "https://tauri.localhost",
+        "tauri://localhost",
+    ],
+    allow_origin_regex=r"https?://(?:[a-zA-Z0-9-]+\.ts\.net|.*?\.tail-[a-f0-9]+\.ts\.net|tauri\.localhost|localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|100\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?$|^tauri://localhost$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -434,6 +443,40 @@ async def api_status():
         "pcb_loaded": _state.get("pcb_loaded"),
         "sch_loaded": _state.get("sch_loaded"),
         "uptime_s": int(time.time() - _START_TIME),
+    }
+
+
+@app.get("/api/v1/health")
+async def api_health():
+    return {
+        "status": "ok",
+        "server": "kicad-mcp",
+        "version": "0.3.0",
+        "uptime_seconds": int(time.time() - _START_TIME),
+        "tool_count": len(_all_tools),
+        "providers": {
+            "kicad_stable": _state.get("kicad_ok", False),
+            "crud_backend": _state.get("crud_backend", "none"),
+        },
+    }
+
+
+@app.get("/api/v1/diagnostics")
+async def api_diagnostics():
+    try:
+        import psutil
+
+        cpu = psutil.cpu_percent()
+        mem = psutil.virtual_memory().percent
+        disk = psutil.disk_usage("/").percent
+    except ImportError:
+        cpu = mem = disk = None
+    return {
+        "success": True,
+        "backend": {"port": 11016, "status": "running", "uptime": int(time.time() - _START_TIME)},
+        "system": {"cpu_percent": cpu, "memory_percent": mem, "disk_percent": disk},
+        "tools": {"total": len(_all_tools), "names": sorted(_all_tools.keys())},
+        "cua_status": {"tesseract_available": False, "window_found": False},
     }
 
 

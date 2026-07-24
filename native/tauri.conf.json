@@ -1,6 +1,6 @@
 {
   "productName": "KiCad MCP",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "identifier": "ai.fleet.kicad-mcp",
   "build": {
     "frontendDist": "../webapp/dist",
@@ -9,17 +9,26 @@
   },
   "app": {
     "windows": [{
+      "label": "main",
       "title": "KiCad MCP",
       "width": 1200, "height": 800,
       "minWidth": 700, "minHeight": 500
     }],
-    "security": { "csp": null }
+    "security": { "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:11016 ipc: http://ipc.localhost; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'" }
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis"],
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
-    "externalBin": ["binaries/{name}-backend"]
+    "resources": ["resources/kicad-mcp-backend.exe",
+            "resources/.env.example"],
+    "windows": {
+      "webviewInstallMode": { "type": "skip" },
+      "nsis": {
+        "installMode": "currentUser",
+        "installerHooks": "./windows/hooks.nsh"
+}
+    }
   },
   "plugins": {
     "shell": { "open": true },
@@ -27,3 +36,6 @@
     "process": { "all": true }
   }
 }
+
+
+

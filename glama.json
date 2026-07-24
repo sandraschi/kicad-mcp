@@ -1,0 +1,20 @@
+{
+  "$schema": "https://glama.ai/mcp/schemas/2025/schema.json",
+  "name": "kicad-mcp",
+  "version": "0.3.0",
+  "description": "KiCad PCB/schematic design automation via MCP tools and REST API — export lane (kicad-cli) and headless CRUD (KiCad 11 nightly IPC)",
+  "author": "Sandra Schipal",
+  "repository": "https://github.com/sandraschi/kicad-mcp",
+  "homepage": "https://github.com/sandraschi/kicad-mcp",
+  "license": "MIT",
+  "categories": ["hardware", "eda", "pcb-design"],
+  "tags": ["kicad", "pcb", "schematic", "eda", "electronics"],
+  "mcp": {
+    "command": "uv",
+    "args": ["run", "--directory", ".", "run_server.py"],
+    "env": {
+      "PYTHONPATH": "src",
+      "PYTHONUNBUFFERED": "1"
+    }
+  }
+}

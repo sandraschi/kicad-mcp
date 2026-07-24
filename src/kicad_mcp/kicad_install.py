@@ -32,7 +32,7 @@ def _parse_major(version_text: str | None) -> int | None:
 
 def _cli_version(cli_path: str) -> str | None:
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # noqa: S603 — trusted KiCad binary path
             [cli_path, "version"],
             capture_output=True,
             text=True,
@@ -47,7 +47,7 @@ def _cli_version(cli_path: str) -> str | None:
 
 def _has_api_server_subcommand(cli_path: str) -> bool:
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # noqa: S603 — trusted KiCad binary path
             [cli_path, "api-server", "--help"],
             capture_output=True,
             text=True,
@@ -90,7 +90,7 @@ def _windows_candidate_paths() -> list[str]:
 def _where_kicad_cli() -> str | None:
     try:
         result = subprocess.run(
-            ["where", "kicad-cli"],
+            ["where", "kicad-cli"],  # noqa: S607 — trusted `where` for KiCad discovery
             capture_output=True,
             text=True,
             timeout=5,
@@ -150,17 +150,17 @@ def resolve_stable_cli(explicit: str | None = None) -> KicadCliInstall | None:
     # Prefer highest major that does NOT expose api-server (true stable lane)
     stable = [i for i in installs if not i.has_api_server]
     if stable:
-        stable.sort(key=lambda i: (i.major or 0), reverse=True)
+        stable.sort(key=lambda i: i.major or 0, reverse=True)
         return stable[0]
 
     # Fall back: any install without api-server by major<=10
     legacy = [i for i in installs if (i.major or 0) <= 10]
     if legacy:
-        legacy.sort(key=lambda i: (i.major or 0), reverse=True)
+        legacy.sort(key=lambda i: i.major or 0, reverse=True)
         return legacy[0]
 
     if installs:
-        installs.sort(key=lambda i: (i.major or 0), reverse=True)
+        installs.sort(key=lambda i: i.major or 0, reverse=True)
         return installs[0]
     return None
 
@@ -193,7 +193,7 @@ def resolve_ipc_cli(explicit: str | None = None) -> KicadCliInstall | None:
     installs = [i for i in discover_cli_installs() if i.has_api_server]
     if not installs:
         return None
-    installs.sort(key=lambda i: (i.major or 0), reverse=True)
+    installs.sort(key=lambda i: i.major or 0, reverse=True)
     return installs[0]
 
 

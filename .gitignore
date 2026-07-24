@@ -10,3 +10,14 @@ htmlcov/
 .coverage
 *.egg-info/
 _dashboard/
+.env
+.bak
+reports/
+*.mcpb
+*.log
+.assess-fix-timestamp
+.qualitycheck-timestamp
+.deps-timestamp
+.drift-timestamp
+.ghaudit-timestamp
+.benchmark-last.json

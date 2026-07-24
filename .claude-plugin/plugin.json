@@ -1,0 +1,6 @@
+{
+  "name": "kicad-mcp",
+  "version": "0.3.0",
+  "description": "KiCad PCB/schematic design automation via MCP tools",
+  "hooks": "../hooks/hooks.json"
+}

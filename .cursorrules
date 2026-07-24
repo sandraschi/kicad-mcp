@@ -1,0 +1,20 @@
+# KiCad MCP Agent Rules
+
+- Use copies of .kicad_pcb in %TEMP%\kicad_mcp_work\uploads\ for CRUD experiments
+- Do not save production boards with 11 nightly without backup
+- DRC and manufacturing exports: always stable KICAD_CLI_PATH, not IPC
+- If crud_backend is none, CRUD tools fail — check with kicad_status()
+
+## Session Context (KiCad MCP)
+
+You have access to KiCad PCB/schematic design automation via 41 MCP tools.
+Three execution lanes: stable kicad-cli (exports/DRC), IPC nightly (headless CRUD via kicad-python), legacy TCP bridge.
+
+**Before starting work:**
+1. Check KiCad availability: kicad_status()
+2. List commands: kicad_supported_commands()
+3. Check docs in docs/ for API details
+
+**At end of work:**
+- Export completed designs to outputs/
+- Save any modified boards before closing

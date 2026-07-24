@@ -1,10 +1,25 @@
-﻿# start.ps1 - KiCad MCP + Webapp (SOTA 2026)
-param([switch]$Headless, [switch]$BackendOnly, [switch]$NoBrowser)
+# start.ps1 - KiCad MCP + Webapp (SOTA 2026)
+param([switch]$Headless, [switch]$BackendOnly, [switch]$NoBrowser,
+    [switch]$ReuseIfRunning)
 $ErrorActionPreference = "Stop"
 $ScriptRoot = Split-Path -Parent $PSCommandPath
 $BackendPort = 11016
 $FrontendPort = 11017
-$env:KICAD_MCP_WORK_DIR = "$env:TEMP\kicad_mcp_work"
+
+$portResolve = @{
+    Ports      = @($BackendPort, $FrontendPort)
+    Label      = "kicad-mcp"
+    AllowReuse = $ReuseIfRunning
+}
+if ($ReuseIfRunning) {
+    $portResolve.HealthChecks = @{
+        $BackendPort = "http://127.0.0.1:$BackendPort/health"
+        $FrontendPort = "http://127.0.0.1:$FrontendPort/"
+    }
+}
+$portState = Resolve-FleetPortConflict @portResolve
+if ($portState.Action -eq 'Blocked') { exit 1 }
+if ($portState.Reuse) { return }$env:KICAD_MCP_WORK_DIR = "$env:TEMP\kicad_mcp_work"
 
 $FleetStartPath = Join-Path $ScriptRoot "scripts\FleetStartMode.ps1"
 if (-not (Test-Path -LiteralPath $FleetStartPath)) {
@@ -12,9 +27,10 @@ if (-not (Test-Path -LiteralPath $FleetStartPath)) {
     exit 1
 }
 . $FleetStartPath
-Stop-FleetPortSquatters -Ports @($BackendPort, $FrontendPort, 11018) -Label "kicad-mcp"
 
-if (-not (Assert-FleetPortsAvailable -Ports @($BackendPort, $FrontendPort, 11018) -Label "kicad-mcp")) { exit 1 }
+
+Push-Location $ScriptRoot
+try { uv sync; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } } finally { Pop-Location }
 
 Write-Host "Starting KiCad MCP backend on port $BackendPort..." -ForegroundColor Cyan
 $backendCmd = "Set-Location '$ScriptRoot'; uv run --project '$ScriptRoot' python -m kicad_mcp.server --mode dual --port $BackendPort"
@@ -22,9 +38,9 @@ $BackendProc = Start-Process powershell -ArgumentList "-NoProfile", "-WindowStyl
 
 Write-Host "Waiting for backend on port $BackendPort..." -ForegroundColor Gray
 $backendReady = $false
-for ($i = 0; $i -lt 60; $i++) {
+for ($i = 0; $i -lt 30; $i++) {
     try {
-        $r = Invoke-WebRequest -Uri "http://127.0.0.1:$BackendPort/api/v1/status" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
+        $r = Invoke-WebRequest -Uri "http://127.0.0.1:$BackendPort/api/v1/status" -TimeoutSec 2 -UseBasicParsing -ErrorAction SilentlyContinue
         if ($r.StatusCode -eq 200) { $backendReady = $true; break }
     } catch {}
     Start-Sleep 1
@@ -55,6 +71,11 @@ if (-not $NoBrowser) {
 Write-Host "KiCad MCP: http://localhost:$BackendPort/api/v1/status" -ForegroundColor Green
 Write-Host "Webapp:    http://localhost:$FrontendPort" -ForegroundColor Green
 Write-Host "Starting Vite frontend on port $FrontendPort..." -ForegroundColor Green
+for ($i = 0; $i -lt 10; $i++) {
+    $listeners = Get-NetTCPConnection -LocalPort $FrontendPort -ErrorAction SilentlyContinue
+    if (-not $listeners) { break }
+    Start-Sleep -Milliseconds 500
+}
 Set-Location $WebRoot
 npm run dev -- --port $FrontendPort --host --strictPort
 

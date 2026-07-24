@@ -1,3 +1,49 @@
+
+## [Unreleased] — 2026-07-24
+
+### Fixed
+- CRITICAL: CORS allow_origin_regex now unconditional with Tailscale/LAN/CGNAT coverage
+- CRITICAL: Added /api/v1/health endpoint (was 404 — broke dashboard health polling)
+- CRITICAL: NSIS hooks.nsh process names fixed (kicad-backend → kicad-mcp-backend)
+- CRITICAL: tauri.conf.json bundles .env.example instead of .env (security — was leaking API keys)
+- CRITICAL: build.ps1 bundles .env.example instead of .env
+- CRITICAL: run_server.py now supports dual transport (MCP_HOST/PORT env → HTTP, fallback → stdio)
+- VERSION: tauri.conf.json synced to 0.3.0 (was 0.1.0), FastAPI title version synced
+- capabilities: Added shell:allow-spawn, shell:allow-execute, core:window:allow-set-focus
+- .gitignore: Added .env, .bak, reports/, *.mcpb, *.log, timestamp files
+- webapp/start.ps1: Fixed undefined $ProjectRoot variable, added -NoBrowser flag
+- webapp/api.ts: Exported API_BASE, added VITE_API_BASE env var override
+- TypeScript: Fixed 8 compilation errors (missing npm deps, untyped event, useRef init)
+- Python: Fixed bare except:pass in ipc_backend.py (Pattern 1 hardening)
+- ruff: Added as dev dependency, fixed lint warnings, formatted all source
+
+### Added
+- .env.example: Template for KiCad configuration (no real secrets)
+- glama.json: Fleet MCP registry metadata
+- llms-full.txt: Comprehensive LLM context document
+- Session context injection: .claude-plugin/plugin.json + hooks/hooks.json, .cursorrules, .windsurfrules, .github/copilot-instructions.md, .opencode/skills/kicad-mcp/SKILL.md
+- reports/ directory with assess-2026-07-24.md report
+- just mcpb-pack recipe for MCPB bundle generation
+- data-testid attributes on Dashboard KPI cards
+
+### Fixed
+- native/src/backend.rs: Added free_port() multi-layer kill (Stop-Process → taskkill → UAC elevated → 240s poll), stdout/stderr stream watching with backend-ready detection, and health check logging
+- webapp/index.css: Added color-scheme: dark for native form controls
+
+## [Unreleased] — 2026-06-14
+
+### Fixed
+- Tauri build: resolved Rust crate conflict (brotli/alloc-no-stdlib)
+- Tauri build: fixed PyInstaller path mismatch (hyphen to underscore in src dirs)
+- Tauri build: fixed TypeScript errors (unused imports, useRef arg, import.meta.env)
+- Tauri CORS: allow_origins includes tauri://localhost for WebView access
+
+### Added
+- CUA-NSIS: just cua-nsis-test recipe, smoke script, config
+- CUA-NSIS: build.ps1 now copies NSIS installer to dist/
+- CUA-NSIS: 11-phase smoke test (install, launch, WebView OCR, diagnostics, uninstall)
+- CUA-NSIS: local certification — all 11 phases pass locally (2026-06-14)
+
 # Changelog
 
 ## [0.3.0] — 2026-05-29
@@ -85,3 +131,5 @@
 - Vite + React webapp with 8 pages
 - justfile with bootstrap, serve, dev, lint, test, health, e2e recipes
 - kicad-cli subprocess fallback for headless operations
+
+

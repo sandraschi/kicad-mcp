@@ -1,0 +1,118 @@
+# KiCad MCP — Full Context
+
+## Overview
+
+KiCad MCP is a FastMCP 3.4+ server for PCB/schematic design automation. It provides 41 MCP tools across 6 categories (PCB, Schematic, BOM, Library, Marketplace, System) plus a REST API and dual-transport (MCP_PORT env → HTTP, fallback → stdio).
+
+Three execution lanes:
+1. **Stable export** — kicad-cli (10.x) for DRC, ERC, Gerber, STEP, PDF, SVG, BOM
+2. **Headless IPC CRUD** — KiCad 11 nightly api-server + kicad-python (kipy) for board/schematic modification
+3. **Legacy TCP bridge** — kc_bridge.py via KiCad GUI (deprecated on 11 nightly)
+
+## Ports
+
+| Service | Port |
+|---------|------|
+| Backend (FastAPI + MCP HTTP) | 11016 |
+| Frontend (Vite dev) | 11017 |
+| Legacy TCP bridge | 11018 |
+
+## Environment Variables
+
+| Var | Default | Description |
+|-----|---------|-------------|
+| `MCP_PORT` | — | HTTP mode port (dual transport detection) |
+| `MCP_HOST` | 127.0.0.1 | HTTP mode host |
+| `KICAD_CLI_PATH` | auto | Stable kicad-cli path |
+| `KICAD_IPC_CLI_PATH` | auto | IPC nightly kicad-cli path |
+| `KICAD_MCP_CRUD_BACKEND` | auto | CRUD preference: ipc/tcp/none |
+| `KC_BRIDGE_PORT` | 11018 | Legacy TCP bridge port |
+| `KICAD_MCP_WORK_DIR` | %TEMP%\kicad_mcp_work | Working directory |
+| `GITHUB_TOKEN` / `GH_TOKEN` | — | GitHub API auth (marketplace) |
+| `SNAPEDA_API_KEY` | — | SnapEDA API auth |
+| `KICAD_TAURI` | — | Set by Tauri spawn for CORS |
+
+## REST Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/v1/status` | Server status, KiCad availability, uptime |
+| `GET /api/v1/health` | Liveness probe (status, version, tool_count, providers) |
+| `GET /api/v1/diagnostics` | Full diagnostics: tools, system CPU/mem/disk, CUA status |
+| `GET /api/v1/tools` | List registered tool names |
+| `POST /api/v1/control/{tool_name}` | Call any MCP tool by name via REST |
+| `POST /api/v1/upload` | Upload KiCad project file |
+| `GET /api/v1/list` | List uploads/outputs files |
+| `GET /api/v1/download/{file_name}` | Download generated file |
+
+## MCP Tools (41)
+
+### PCB (21 tools)
+pcb_load, pcb_info, pcb_list_components, pcb_list_nets, pcb_list_tracks, pcb_get_component, pcb_drc, pcb_export_step, pcb_export_gerber, pcb_export_pos, pcb_export_dxf, pcb_export_svg, pcb_export_pdf, pcb_export_vrml, pcb_export_glb, pcb_export_ipc2581, pcb_export_odbpp, pcb_place_component, pcb_add_track, pcb_add_via, pcb_save, pcb_set_board_outline
+
+### Schematic (8 tools)
+sch_load, sch_info, sch_erc, sch_export_netlist, sch_export_python_bom, sch_export_pdf, sch_export_svg, sch_export_dxf
+
+### BOM (1 tool)
+bom_generate
+
+### Library (6 tools)
+lib_list_footprints, lib_list_symbols, lib_find_footprint, lib_find_symbol, fp_export_svg, sym_export_svg
+
+### Marketplace (5 tools)
+marketplace_search, marketplace_categories, marketplace_download, parts_search, parts_missing
+
+### System (2 tools)
+kicad_status, kicad_supported_commands
+
+## Architecture
+
+```
+MCP client/tool → FastMCP gateway → kicad-cli (stable export)
+                                   → IPC headless (11 nightly CRUD)
+                                   → kc_bridge TCP (legacy GUI)
+                                   → JSON response
+```
+
+- `server.py`: FastMCP + FastAPI gateway, lifespan, CORS, REST routes
+- `crud_router.py`: IPC vs TCP dispatch
+- `ipc_backend.py`: Headless kipy session management
+- `kicad_install.py`: CLI discovery, stable vs IPC resolution
+- `kc_bridge.py`: Legacy TCP JSON-RPC bridge
+
+## Frontend
+
+React 19 + Vite + Tailwind + TypeScript + Zustand + Three.js (3D PCB viewer).
+Tauri 2.0 wrapper for desktop. Exports to `native/`.
+
+## Testing
+
+- `uv run pytest tests/` — 14 unit tests
+- `just e2e` — Playwright E2E via mcp-central-docs audit script
+- `just cua-nsis-test` — CUA-NSIS smoke test (install → launch → health → screenshot → diagnostics → uninstall)
+- `just build-native` — Full NSIS build pipeline
+
+## Building
+
+- `just serve` — dual-transport dev server on port 11016
+- `just build-native` — PyInstaller → Tauri → NSIS installer
+- `uv run python scripts/mcpb-pack.ps1` — MCPB bundle
+
+## Source Layout
+
+```
+src/kicad_mcp/
+├── server.py              # FastMCP + FastAPI gateway
+├── kicad_install.py       # CLI discovery
+├── ipc_backend.py         # Headless IPC session
+├── crud_router.py         # CRUD dispatch
+├── kc_bridge.py           # Legacy TCP bridge
+├── tools/
+│   ├── pcb.py             # 21 PCB tools
+│   ├── schematic.py       # 8 Schematic tools
+│   ├── bom.py             # 1 BOM tool
+│   ├── library.py         # 6 Library tools
+│   └── marketplace.py     # 5 Marketplace + parts tools
+└── scripts/
+    └── probe_ipc_headless.py
+```

@@ -1,4 +1,5 @@
-﻿set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+import 'scripts/just/fleet.just'
 
 export NAME := "KiCad MCP"
 export DESC := "PCB/schematic design automation via MCP tools and REST API"
@@ -17,6 +18,10 @@ bootstrap:
     uv sync --all-extras
     Set-Location '{{justfile_directory()}}\webapp'
     cmd /c npm install
+
+mcpb-pack:
+    Set-Location '{{justfile_directory()}}'
+    pwsh -NoProfile -File '{{justfile_directory()}}\scripts\mcpb-pack.ps1' -RepoRoot (Get-Location).Path
 
 clean:
     if (Test-Path -Path "__pycache__") { Remove-Item -Recurse -Force "__pycache__" }; \
@@ -49,6 +54,10 @@ build-native-debug:
     Set-Location '{{justfile_directory()}}\native'
     $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
     npx @tauri-apps/cli build --debug
+
+# Run CUA smoke test against installed NSIS app
+cua-nsis-test:
+    C:\Windows\py.exe scripts/cua-smoke.py
 
 # ── Development ───────────────────────────────────────────────────────────────
 
@@ -83,4 +92,3 @@ e2e:
 
 health:
     curl http://localhost:11016/api/v1/status
-

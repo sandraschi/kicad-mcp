@@ -38,11 +38,11 @@ def main() -> int:
 
     report: dict = {
         "stable_cli": None if stable is None else {"path": stable.path, "version": stable.version},
-        "ipc_cli": None if ipc is None else {"path": ipc.path, "version": ipc.version, "api_server": ipc.has_api_server},
+        "ipc_cli": None
+        if ipc is None
+        else {"path": ipc.path, "version": ipc.version, "api_server": ipc.has_api_server},
         "ipc_python_installed": ipc_python_available(),
-        "discovered": [
-            {"path": i.path, "version": i.version, "api_server": i.has_api_server} for i in installs
-        ],
+        "discovered": [{"path": i.path, "version": i.version, "api_server": i.has_api_server} for i in installs],
     }
 
     if ipc and ipc.has_api_server and ipc_python_available():

@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.DEV ? '' : 'http://127.0.0.1:11012';
+export const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? '' : 'http://127.0.0.1:11016');
 
 export async function apiGet(path: string) {
   const res = await fetch(`${API_BASE}${path}`);
