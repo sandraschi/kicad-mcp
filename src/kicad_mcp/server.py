@@ -649,6 +649,76 @@ async def api_download(file_name: str, dir: str = "outputs"):
     return FileResponse(path, filename=file_name)
 
 
+@app.get("/api/v1/boards")
+async def api_boards_search(q: str = "", per_page: int = 20):
+    """Search GitHub for simple KiCad board projects."""
+    async with httpx.AsyncClient(timeout=30) as client:
+        query = f"topic:kicad {q}".strip() if q else "topic:kicad"
+        resp = await client.get(
+            "https://api.github.com/search/repositories",
+            params={"q": query, "sort": "stars", "order": "desc", "per_page": min(per_page, 50)},
+            headers={"Accept": "application/vnd.github.v3+json"},
+        )
+        if resp.status_code != 200:
+            return {"success": False, "error": f"GitHub returned {resp.status_code}"}
+        items = resp.json().get("items", [])
+    results = []
+    for r in items:
+        desc = (r.get("description") or "").lower()
+        topics = " ".join(r.get("topics", [])).lower()
+        text = f"{desc} {topics}"
+        if any(
+            kw in text
+            for kw in (
+                "motherboard",
+                "backplane",
+                "server",
+                "atx",
+                "8-layer",
+                "10-layer",
+                "12-layer",
+                "16-layer",
+                "fpga board",
+            )
+        ):
+            continue
+        score = 5
+        if any(
+            kw in text
+            for kw in (
+                "breakout",
+                "hat",
+                "shield",
+                "arduino",
+                "raspberry pi",
+                "stm32",
+                "esp32",
+                "sensor",
+                "led",
+                "motor driver",
+                "audio",
+                "usb",
+                "microcontroller",
+            )
+        ):
+            score += 3
+        score += 1 if r.get("stargazers_count", 0) > 10 else 0
+        score += 1 if r.get("stargazers_count", 0) > 100 else 0
+        score += 1 if r.get("size", 0) < 1000 else 0
+        results.append(
+            {
+                "repo": f"{r['owner']['login']}/{r['name']}",
+                "url": r["html_url"],
+                "stars": r.get("stargazers_count", 0),
+                "description": r.get("description", "") or "",
+                "topics": r.get("topics", []),
+                "score": min(score, 10),
+            }
+        )
+    results.sort(key=lambda x: x["score"], reverse=True)
+    return {"success": True, "results": results, "count": len(results)}
+
+
 @app.get("/api/v1/component/{query}")
 async def api_component_detail(query: str):
     """Return mock component details for a part number or query."""
@@ -690,9 +760,16 @@ async def api_board_preview(file_name: str = ""):
         return {"success": False, "error": f"Board not found: {file_name}"}
     glb_name = safe.replace(".kicad_pcb", ".glb").replace(".kicad_pcb-bak", ".glb")
     output_path = os.path.join(OUTPUT_DIR, glb_name)
-    result = await _run_kicad_cli(["pcb", "export", "glb", src if os.path.isfile(src) else safe, "--output", output_path])
+    result = await _run_kicad_cli(
+        ["pcb", "export", "glb", src if os.path.isfile(src) else safe, "--output", output_path]
+    )
     if result["success"] and os.path.isfile(output_path):
-        return {"success": True, "glb_url": f"/api/v1/outputs/{glb_name}", "board": safe, "size_kb": round(os.path.getsize(output_path) / 1024, 1)}
+        return {
+            "success": True,
+            "glb_url": f"/api/v1/outputs/{glb_name}",
+            "board": safe,
+            "size_kb": round(os.path.getsize(output_path) / 1024, 1),
+        }
     return {"success": False, "error": result.get("stderr", "GLB export failed")}
 
 

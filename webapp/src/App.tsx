@@ -13,6 +13,7 @@ import ChatPage from './pages/ChatPage';
 import FabPage from './pages/FabPage';
 import ReviewsPage from './pages/ReviewsPage';
 import ReviewPage from './pages/ReviewPage';
+import BoardsPage from './pages/BoardsPage';
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/fab" element={<FabPage />} />
         <Route path="/reviews" element={<ReviewsPage />} />
         <Route path="/review/:id" element={<ReviewPage />} />
+        <Route path="/boards" element={<BoardsPage />} />
       </Routes>
     </AppLayout>
   );

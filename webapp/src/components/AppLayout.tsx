@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Activity, CircuitBoard, Cpu, Eye, FileText, FolderOpen, Library, MessageSquare, Package, RefreshCw, ShoppingBag, Sparkles } from 'lucide-react';
+import { Activity, CircuitBoard, Cpu, Eye, FileText, FolderOpen, Globe, Library, MessageSquare, Package, RefreshCw, ShoppingBag, Sparkles } from 'lucide-react';
 import { useConnection } from '../store/connection';
 import { useZoom } from '../hooks/useZoom';
 import { API_BASE } from '../lib/api';
@@ -14,6 +14,7 @@ const navItems = [
   { to: '/schematic', label: 'Schematic', icon: Cpu },
   { to: '/bom', label: 'BOM', icon: FileText },
   { to: '/library', label: 'Library', icon: Library },
+  { to: '/boards', label: 'Boards', icon: Globe },
   { to: '/marketplace', label: 'Market', icon: ShoppingBag },
   { to: '/files', label: 'Files', icon: FolderOpen },
   { to: '/fab', label: 'Fab', icon: Package },

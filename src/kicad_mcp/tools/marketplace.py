@@ -293,12 +293,76 @@ def register_marketplace_tools(
             },
         }
 
+    # ── boards_search ────────────────────────────────────────────────────
+
+    @mcp.tool(annotations=_READ_ONLY, version="0.1.0")
+    async def boards_search(
+        q: Annotated[str, Field(description="Search query (e.g. 'raspberry pi hat', 'stm32 breakout').")] = "",
+        per_page: Annotated[int, Field(description="Results per page.", ge=1, le=50)] = 20,
+    ) -> dict:
+        """Search GitHub for simple KiCad board projects (breakouts, hats, shields,
+        dev boards — excludes complex boards like motherboards, servers, 8+ layer).
+
+        ## Return Format
+        {"success": bool, "results": [...], "count": int}
+        """
+        query = f"topic:kicad {q}".strip() if q else "topic:kicad"
+        repos = await _github_search_kicad(query, per_page=per_page)
+        if not repos:
+            return {"success": False, "results": [], "count": 0}
+        candidates = [r for r in repos if _filter_complex(r)]
+        checked = []
+        for r in candidates[:30]:
+            if await _repo_has_kicad_files(r["owner"]["login"], r["name"]):
+                checked.append(r)
+        checked.sort(key=_score_simplicity, reverse=True)
+        rv = []
+        for r in checked[:per_page]:
+            rv.append(
+                {
+                    "repo": f"{r['owner']['login']}/{r['name']}",
+                    "url": r["html_url"],
+                    "stars": r.get("stargazers_count", 0),
+                    "description": r.get("description", "") or "",
+                    "topics": r.get("topics", []),
+                    "score": _score_simplicity(r),
+                }
+            )
+        return {"success": True, "results": rv, "count": len(rv)}
+
+    @mcp.tool(annotations=_MUTATING, version="0.1.0")
+    async def boards_download(
+        repo: Annotated[str, Field(description="GitHub repo in 'owner/name' format.")],
+    ) -> dict:
+        """Download KiCad project files from a GitHub repo into the uploads directory.
+
+        ## Return Format
+        {"success": bool, "files": [str], "count": int, "repo": str}
+        """
+        zip_url = f"https://api.github.com/repos/{repo}/zipball"
+        async with httpx.AsyncClient(timeout=60, headers=GITHUB_HEADERS) as client:
+            resp = await client.get(zip_url)
+            if resp.status_code != 200:
+                return {"success": False, "error": f"GitHub returned {resp.status_code}", "repo": repo}
+            extracted = []
+            with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
+                for name in zf.namelist():
+                    basename = os.path.basename(name)
+                    if basename.endswith((".kicad_pcb", ".kicad_sch")):
+                        prefixed = os.path.join(upload_dir, f"{repo.replace('/', '_')}_{basename}")
+                        with zf.open(name) as src, open(prefixed, "wb") as dst:
+                            dst.write(src.read())
+                        extracted.append(os.path.basename(prefixed))
+            return {"success": True, "files": extracted, "count": len(extracted), "repo": repo}
+
     return {
         "marketplace_search": marketplace_search,
         "marketplace_categories": marketplace_categories,
         "marketplace_download": marketplace_download,
         "parts_search": parts_search,
         "parts_missing": parts_missing,
+        "boards_search": boards_search,
+        "boards_download": boards_download,
     }
 
 
@@ -590,3 +654,103 @@ async def _download_snapeda(part_number: str, upload_dir: str) -> dict:
             return {"success": True, "data": {"part_number": part_number, "files": files, "count": len(files)}}
     except Exception as e:
         return {"success": False, "message": str(e), "data": None}
+
+
+# ── Board marketplace helpers ──────────────────────────────────────────
+
+_HIGH_COMPLEXITY = {
+    "motherboard",
+    "backplane",
+    "server",
+    "switch",
+    "router",
+    "power supply",
+    "atx",
+    "eatx",
+    "mini-itx",
+    "micro-atx",
+    "8-layer",
+    "10-layer",
+    "12-layer",
+    "16-layer",
+    "ddr",
+    "pcie riser",
+    "mining",
+    "gpu",
+    "fpga board",
+}
+
+_SIMPLE_KEYWORDS = {
+    "breakout",
+    "hat",
+    "shield",
+    "arduino",
+    "raspberry pi",
+    "stm32",
+    "esp32",
+    "esp8266",
+    "sensor",
+    "led",
+    "motor driver",
+    "relay",
+    "audio",
+    "usb",
+    "prototype",
+    "development board",
+    "microcontroller",
+    "evaluation board",
+    "adapter",
+    "controller",
+    "module",
+    "click board",
+    "feather",
+    "qwiic",
+    "stemma",
+    "grove",
+}
+
+
+async def _github_search_kicad(query: str, per_page: int = 20) -> list[dict]:
+    async with httpx.AsyncClient(timeout=15, headers=GITHUB_HEADERS) as client:
+        resp = await client.get(
+            f"{GITHUB_API}/search/repositories",
+            params={"q": query, "sort": "stars", "order": "desc", "per_page": per_page},
+        )
+        if resp.status_code == 200:
+            return resp.json().get("items", [])
+    return []
+
+
+async def _repo_has_kicad_files(owner: str, repo: str) -> bool:
+    async with httpx.AsyncClient(timeout=10, headers=GITHUB_HEADERS) as client:
+        for branch in ("main", "master"):
+            try:
+                resp = await client.get(f"{GITHUB_API}/repos/{owner}/{repo}/contents", params={"ref": branch})
+                if resp.status_code == 200:
+                    if any(n.endswith((".kicad_pcb", ".kicad_sch")) for n in {i["name"] for i in resp.json()}):
+                        return True
+            except Exception as exc:
+                logger.warning("GitHub API error checking repo %s/%s: %s", owner, repo, exc)
+    return False
+
+
+def _filter_complex(repo: dict) -> bool:
+    text = f"{repo.get('description') or ''} {' '.join(repo.get('topics', []))}".lower()
+    return not any(kw in text for kw in _HIGH_COMPLEXITY)
+
+
+def _score_simplicity(repo: dict) -> int:
+    text = f"{repo.get('description') or ''} {' '.join(repo.get('topics', []))}".lower()
+    score = 5
+    if any(kw in text for kw in _SIMPLE_KEYWORDS):
+        score += 3
+    stars = repo.get("stargazers_count", 0)
+    if stars > 10:
+        score += 1
+    if stars > 100:
+        score += 1
+    if repo.get("size", 0) < 1000:
+        score += 1
+    if repo.get("has_readme"):
+        score += 1
+    return min(score, 10)
