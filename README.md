@@ -64,7 +64,7 @@ Each step has MCP tools to automate it:
 
 ## Web Dashboard
 
-A React + Three.js webapp provides a 3D board viewer, AI chat (PCB design co-pilot), fabrication pipeline with order tracking, design review with annotations, and a parametric component browser. Access at `http://localhost:11017`.
+A React + Three.js webapp provides a [board marketplace](docs/BOARD_MARKETPLACE.md) (browse & download KiCad projects from GitHub), 3D board viewer, AI chat (PCB design co-pilot), fabrication pipeline with order tracking, design review with annotations, and a parametric component browser. Access at `http://localhost:11017`.
 
 ---
 
@@ -80,7 +80,8 @@ KiCad is the **only** EDA tool with a full headless CLI (`kicad-cli`). Altium, A
 |----------|---------------|
 | [INSTALL.md](INSTALL.md) | Installing KiCad, dependencies, configuration |
 | [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) | Headless vs GUI, schematic→board flow, automation level |
-| [docs/TOOLS.md](docs/TOOLS.md) | All 39 MCP tools by category |
+| [docs/BOARD_MARKETPLACE.md](docs/BOARD_MARKETPLACE.md) | Browse and download KiCad projects from GitHub |
+| [docs/TOOLS.md](docs/TOOLS.md) | All 41 MCP tools by category |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Code structure, IPC vs TCP, lifespan |
 | [docs/API.md](docs/API.md) | REST + MCP API reference |
 | [docs/NIGHTLY_HEADLESS.md](docs/NIGHTLY_HEADLESS.md) | Setting up KiCad 11 nightly for headless IPC |
