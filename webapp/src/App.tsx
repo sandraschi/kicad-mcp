@@ -11,6 +11,8 @@ import DemoPage from './pages/DemoPage';
 import StatusPage from './pages/StatusPage';
 import ChatPage from './pages/ChatPage';
 import FabPage from './pages/FabPage';
+import ReviewsPage from './pages/ReviewsPage';
+import ReviewPage from './pages/ReviewPage';
 
 export default function App() {
   return (
@@ -27,6 +29,8 @@ export default function App() {
         <Route path="/status" element={<StatusPage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/fab" element={<FabPage />} />
+        <Route path="/reviews" element={<ReviewsPage />} />
+        <Route path="/review/:id" element={<ReviewPage />} />
       </Routes>
     </AppLayout>
   );

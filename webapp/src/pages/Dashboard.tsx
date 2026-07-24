@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiGet } from '../lib/api';
 import { CircuitBoard, Cpu, Layers, Wrench } from 'lucide-react';
 import PcbViewer3D from '../components/PcbViewer3D';
@@ -6,10 +6,24 @@ import PcbViewer3D from '../components/PcbViewer3D';
 export default function Dashboard() {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
   const [tools, setTools] = useState<string[]>([]);
+  const [wsConnected, setWsConnected] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     apiGet('/api/v1/status').then(setStatus).catch(console.error);
     apiGet('/api/v1/tools').then((d) => setTools(d.tools || [])).catch(console.error);
+
+    // WebSocket live connection
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//127.0.0.1:11016/ws/board`;
+    try {
+      const ws = new WebSocket(wsUrl);
+      ws.onopen = () => { setWsConnected(true); ws.send(JSON.stringify({ type: 'subscribe', channel: 'board' })); };
+      ws.onclose = () => setWsConnected(false);
+      ws.onerror = () => setWsConnected(false);
+      wsRef.current = ws;
+    } catch {}
+    return () => { wsRef.current?.close(); };
   }, []);
 
   const cards = [
@@ -23,6 +37,10 @@ export default function Dashboard() {
     <div data-testid="dashboard">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">KiCad MCP Dashboard</h1>
+        <div className="flex items-center gap-2 text-xs">
+          <span className={`w-1.5 h-1.5 rounded-full ${wsConnected ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600'}`} />
+          <span className={wsConnected ? 'text-emerald-400' : 'text-gray-500'}>Live {wsConnected ? 'Connected' : 'Offline'}</span>
+        </div>
       </div>
 
       {/* 3D Board Preview */}

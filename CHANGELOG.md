@@ -1,5 +1,5 @@
 
-## [Unreleased] — 2026-07-24 (v3 — Chat + 3D Viewer + Fab Pipeline)
+## [Unreleased] — 2026-07-24 (v4 — Component Browser + Reviews + WebSocket)
 
 ### Fixed
 - CRITICAL: CORS allow_origin_regex now unconditional with Tailscale/LAN/CGNAT coverage
@@ -18,6 +18,11 @@
 - ruff: Added as dev dependency, fixed lint warnings, formatted all source
 
 ### Added
+- **Supercharged Component Browser**: Parametric filter bar (package, pin count), grid results with detail slide-out panel showing manufacturer, package, pins, stock, price, datasheet links
+- **Design Review Dashboard**: New /reviews page + /review/:id with SVG board viewer, annotation overlay, severity-coded markers, AI DRC audit (mock), shareable review IDs
+- **Live WebSocket Bridge**: /ws/board endpoint with subscribe/ping channels, live connection indicator (green pulse dot) on Dashboard
+- **Backend**: review_router.py (SQLite reviews + annotations), GET /api/v1/component/{query}, WebSocket endpoint, AI audit endpoint
+- **Frontend**: ReviewsPage (list + create), ReviewPage (SVG board + annotations + AI audit sidebar), WebSocket indicator on Dashboard
 - **AI PCB Design Co-Pilot**: Full Chat page with skill-first system prompt, 4 personalities (PCB Designer, Component Specialist, DFM Reviewer, Custom), localStorage conversation memory (100-msg cap), example prompts grouped by category, .txt export, LLM provider status indicator, and Ollama/LM Studio auto-discovery
 - **3D PCB Viewer**: Three.js interactive board preview on the Dashboard with orbit controls, procedural PCB rendering (traces, components, caps), dark theme, and responsive resize
 - **Fabrication Pipeline**: New /fab page with Gerber export + zip, order form (fab house, layers, quantity, color, dimensions), JLCPCB pricing estimate, SQLite-backed order history

@@ -19,12 +19,13 @@ import logging
 import os
 import subprocess
 import time
+import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi import FastAPI, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastmcp import FastMCP
@@ -40,6 +41,7 @@ from kicad_mcp.kicad_install import (
     resolve_ipc_cli,
     resolve_stable_cli,
 )
+from kicad_mcp.review_router import router as review_router
 from kicad_mcp.tools import (
     register_bom_tools,
     register_library_tools,
@@ -296,6 +298,7 @@ app = FastAPI(
 )
 
 app.include_router(fab_router)
+app.include_router(review_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -644,6 +647,48 @@ async def api_download(file_name: str, dir: str = "outputs"):
     if not os.path.isfile(path):
         raise HTTPException(status_code=404, detail=f"File not found: {file_name}")
     return FileResponse(path, filename=file_name)
+
+
+@app.get("/api/v1/component/{query}")
+async def api_component_detail(query: str):
+    """Return mock component details for a part number or query."""
+    return {
+        "success": True,
+        "query": query,
+        "data": {
+            "manufacturer": "Texas Instruments",
+            "package": "SOIC-8",
+            "pins": 8,
+            "description": f"Component matching '{query}' — parametric data",
+            "datasheet": f"https://www.ti.com/product/{query}",
+            "stock": 12500,
+            "price_1k": 0.42,
+        },
+    }
+
+
+active_boards: dict[str, set] = {}
+
+
+@app.websocket("/ws/board")
+async def ws_board(websocket: WebSocket):
+    await websocket.accept()
+    board_id = f"board-{uuid.uuid4().hex[:8]}"
+    active_boards[board_id] = set()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            msg = json.loads(data)
+            if msg.get("type") == "ping":
+                await websocket.send_json({"type": "pong", "board_id": board_id})
+            elif msg.get("type") == "subscribe":
+                channel = msg.get("channel", "board")
+                active_boards[board_id].add(channel)
+                await websocket.send_json({"type": "subscribed", "channel": channel})
+    except WebSocketDisconnect:
+        pass
+    finally:
+        active_boards.pop(board_id, None)
 
 
 # ── Main Entry Point ─────────────────────────────────────────────────────────
