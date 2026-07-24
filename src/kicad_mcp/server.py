@@ -650,8 +650,8 @@ async def api_download(file_name: str, dir: str = "outputs"):
 
 
 @app.get("/api/v1/boards")
-async def api_boards_search(q: str = "", per_page: int = 20):
-    """Search GitHub for simple KiCad board projects."""
+async def api_boards_search(q: str = "", per_page: int = 20, filter_complex: bool = True):
+    """Search GitHub for KiCad board projects."""
     async with httpx.AsyncClient(timeout=30) as client:
         query = f"topic:kicad {q}".strip() if q else "topic:kicad"
         resp = await client.get(
@@ -667,7 +667,7 @@ async def api_boards_search(q: str = "", per_page: int = 20):
         desc = (r.get("description") or "").lower()
         topics = " ".join(r.get("topics", [])).lower()
         text = f"{desc} {topics}"
-        if any(
+        if filter_complex and any(
             kw in text
             for kw in (
                 "motherboard",

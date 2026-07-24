@@ -9,17 +9,18 @@ export default function BoardsPage() {
   const [downloading, setDownloading] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [localBoards, setLocalBoards] = useState<string[]>([]);
+  const [filterComplex, setFilterComplex] = useState(true);
 
   const search = useCallback(async () => {
     setLoading(true);
     setMessage('');
     try {
-      const d = await apiGet(`/api/v1/boards?q=${encodeURIComponent(query)}&per_page=24`);
+      const d = await apiGet(`/api/v1/boards?q=${encodeURIComponent(query)}&per_page=24&filter_complex=${filterComplex}`);
       if (d.success) { setResults(d.results); if (d.count === 0) setMessage('No boards found.'); }
       else setMessage(d.error || 'Search failed');
     } catch (e) { setMessage(String(e)); }
     setLoading(false);
-  }, [query]);
+  }, [query, filterComplex]);
 
   const download = useCallback(async (repo: string) => {
     setDownloading(repo);
@@ -51,6 +52,13 @@ export default function BoardsPage() {
           <input className="flex-1 bg-transparent text-zinc-100 border-none outline-none text-sm" placeholder="Search boards (e.g. 'raspberry pi hat', 'stm32', 'audio dac')..." value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && search()} />
         </div>
         <button onClick={search} disabled={loading} className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 text-white rounded-lg px-4 py-2 text-sm">Search</button>
+        <button
+          onClick={() => setFilterComplex(!filterComplex)}
+          className={`px-3 py-2 rounded-lg text-xs border transition-colors ${filterComplex ? 'bg-zinc-800 text-zinc-300 border-zinc-600' : 'bg-amber-900/30 text-amber-300 border-amber-700'}`}
+          title={filterComplex ? 'Filtering out complex boards. Click to show all.' : 'Showing all boards. Click to filter out complex ones.'}
+        >
+          {filterComplex ? 'Simple boards' : 'All boards'}
+        </button>
       </div>
 
       {loading && <div className="text-gray-500 text-sm py-8 text-center">Searching GitHub for KiCad projects...</div>}

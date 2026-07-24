@@ -299,6 +299,7 @@ def register_marketplace_tools(
     async def boards_search(
         q: Annotated[str, Field(description="Search query (e.g. 'raspberry pi hat', 'stm32 breakout').")] = "",
         per_page: Annotated[int, Field(description="Results per page.", ge=1, le=50)] = 20,
+        filter_complex: Annotated[bool, Field(description="If true, excludes motherboards, backplanes, 8+ layer, etc.")] = True,
     ) -> dict:
         """Search GitHub for simple KiCad board projects (breakouts, hats, shields,
         dev boards — excludes complex boards like motherboards, servers, 8+ layer).
@@ -310,7 +311,7 @@ def register_marketplace_tools(
         repos = await _github_search_kicad(query, per_page=per_page)
         if not repos:
             return {"success": False, "results": [], "count": 0}
-        candidates = [r for r in repos if _filter_complex(r)]
+        candidates = [r for r in repos if not filter_complex or _filter_complex(r)]
         checked = []
         for r in candidates[:30]:
             if await _repo_has_kicad_files(r["owner"]["login"], r["name"]):
