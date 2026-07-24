@@ -696,6 +696,7 @@ async def ws_board(websocket: WebSocket):
 
 def main():
     import argparse
+    import socket
 
     parser = argparse.ArgumentParser(description="KiCad MCP Server")
     parser.add_argument("--mode", default="dual", choices=["dual", "sse", "stdio", "http"], help="Server mode")
@@ -704,10 +705,16 @@ def main():
     args = parser.parse_args()
 
     if args.mode == "stdio":
-        # FastMCP handles stdio transport natively
         mcp.run(transport="stdio")
-    else:
-        uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+        return
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind((args.host, args.port))
+    sock.set_inheritable(True)
+    config = uvicorn.Config(app=app, host=args.host, port=args.port, log_level="info")
+    server = uvicorn.Server(config=config)
+    server.run(sockets=[sock])
 
 
 if __name__ == "__main__":
