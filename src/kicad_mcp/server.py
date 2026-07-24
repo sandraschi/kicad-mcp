@@ -670,6 +670,32 @@ async def api_component_detail(query: str):
 active_boards: dict[str, set] = {}
 
 
+@app.post("/api/v1/board/preview")
+async def api_board_preview(file_name: str = ""):
+    """Export a board as GLB and return the download URL.
+
+    POST body: {"file_name": "design.kicad_pcb"}
+    If file_name is empty, returns the list of available boards.
+    """
+    if not file_name:
+        files = []
+        if os.path.isdir(UPLOAD_DIR):
+            for f in sorted(os.listdir(UPLOAD_DIR)):
+                if f.endswith((".kicad_pcb", ".kicad_pcb-bak")):
+                    files.append({"name": f, "size_bytes": os.path.getsize(os.path.join(UPLOAD_DIR, f))})
+        return {"boards": files, "count": len(files)}
+    safe = Path(file_name).name
+    src = os.path.join(UPLOAD_DIR, safe) if not os.path.isabs(file_name) else file_name
+    if not os.path.isfile(src) and not os.path.isfile(safe):
+        return {"success": False, "error": f"Board not found: {file_name}"}
+    glb_name = safe.replace(".kicad_pcb", ".glb").replace(".kicad_pcb-bak", ".glb")
+    output_path = os.path.join(OUTPUT_DIR, glb_name)
+    result = await _run_kicad_cli(["pcb", "export", "glb", src if os.path.isfile(src) else safe, "--output", output_path])
+    if result["success"] and os.path.isfile(output_path):
+        return {"success": True, "glb_url": f"/api/v1/outputs/{glb_name}", "board": safe, "size_kb": round(os.path.getsize(output_path) / 1024, 1)}
+    return {"success": False, "error": result.get("stderr", "GLB export failed")}
+
+
 @app.websocket("/ws/board")
 async def ws_board(websocket: WebSocket):
     await websocket.accept()

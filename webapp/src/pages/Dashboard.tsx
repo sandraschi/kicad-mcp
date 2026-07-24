@@ -1,19 +1,22 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiGet } from '../lib/api';
-import { CircuitBoard, Cpu, Layers, Wrench } from 'lucide-react';
+import { CircuitBoard, Cpu, Layers, RefreshCw, Wrench } from 'lucide-react';
 import PcbViewer3D from '../components/PcbViewer3D';
 
 export default function Dashboard() {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
   const [tools, setTools] = useState<string[]>([]);
+  const [boardName, setBoardName] = useState('');
   const [wsConnected, setWsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
-  useEffect(() => {
+  const fetchStatus = useCallback(() => {
     apiGet('/api/v1/status').then(setStatus).catch(console.error);
     apiGet('/api/v1/tools').then((d) => setTools(d.tools || [])).catch(console.error);
+  }, []);
 
-    // WebSocket live connection
+  useEffect(() => {
+    fetchStatus();
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//127.0.0.1:11016/ws/board`;
     try {
@@ -24,7 +27,7 @@ export default function Dashboard() {
       wsRef.current = ws;
     } catch {}
     return () => { wsRef.current?.close(); };
-  }, []);
+  }, [fetchStatus]);
 
   const cards = [
     { label: 'Export CLI', value: status?.kicad_available ? '10.x ready' : 'Not Found', icon: Wrench, color: 'emerald' },
@@ -45,8 +48,11 @@ export default function Dashboard() {
 
       {/* 3D Board Preview */}
       <div className="mb-6 bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-        <div className="px-4 py-2 border-b border-gray-800 text-xs text-gray-500">3D Board Preview</div>
-        <PcbViewer3D toolCount={tools.length} boardAvailable={!!status?.kicad_available} />
+        <div className="px-4 py-2 border-b border-gray-800 flex items-center justify-between">
+          <span className="text-xs text-gray-500">3D Board Preview</span>
+          <button onClick={fetchStatus} className="text-gray-500 hover:text-white p-0.5" title="Refresh"><RefreshCw className="w-3 h-3" /></button>
+        </div>
+        <PcbViewer3D boardName={boardName} onBoardChange={setBoardName} />
       </div>
 
       <div className="grid grid-cols-4 gap-4 mb-8">
