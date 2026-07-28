@@ -32,7 +32,7 @@ def _parse_major(version_text: str | None) -> int | None:
 
 def _cli_version(cli_path: str) -> str | None:
     try:
-        result = subprocess.run(  # noqa: S603 — trusted KiCad binary path
+        result = subprocess.run(
             [cli_path, "version"],
             capture_output=True,
             text=True,
@@ -47,7 +47,7 @@ def _cli_version(cli_path: str) -> str | None:
 
 def _has_api_server_subcommand(cli_path: str) -> bool:
     try:
-        result = subprocess.run(  # noqa: S603 — trusted KiCad binary path
+        result = subprocess.run(
             [cli_path, "api-server", "--help"],
             capture_output=True,
             text=True,
@@ -90,7 +90,7 @@ def _windows_candidate_paths() -> list[str]:
 def _where_kicad_cli() -> str | None:
     try:
         result = subprocess.run(
-            ["where", "kicad-cli"],  # noqa: S607 — trusted `where` for KiCad discovery
+            ["where", "kicad-cli"],
             capture_output=True,
             text=True,
             timeout=5,
