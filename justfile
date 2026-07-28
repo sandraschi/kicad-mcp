@@ -1,4 +1,4 @@
-set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
 import 'scripts/just/fleet.just'
 
 export NAME := "KiCad MCP"
@@ -18,10 +18,6 @@ bootstrap:
     uv sync --all-extras
     Set-Location '{{justfile_directory()}}\webapp'
     cmd /c npm install
-
-mcpb-pack:
-    Set-Location '{{justfile_directory()}}'
-    pwsh -NoProfile -File '{{justfile_directory()}}\scripts\mcpb-pack.ps1' -RepoRoot (Get-Location).Path
 
 clean:
     if (Test-Path -Path "__pycache__") { Remove-Item -Recurse -Force "__pycache__" }; \
@@ -55,10 +51,6 @@ build-native-debug:
     $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
     npx @tauri-apps/cli build --debug
 
-# Run CUA smoke test against installed NSIS app
-cua-nsis-test:
-    C:\Windows\py.exe scripts/cua-smoke.py
-
 # ── Development ───────────────────────────────────────────────────────────────
 
 dev port=PORT:
@@ -86,7 +78,7 @@ test:
     uv run pytest
 
 e2e:
-    pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "D:\Dev\repos\mcp-central-docs\scripts\playwright-audit.ps1" -RepoPath "{{justfile_directory()}}"
+    powershell.exe -NoProfile -NoProfile -ExecutionPolicy Bypass -File "D:\Dev\repos\mcp-central-docs\scripts\playwright-audit.ps1" -RepoPath "{{justfile_directory()}}"
 
 # ── Diagnostics ───────────────────────────────────────────────────────────────
 

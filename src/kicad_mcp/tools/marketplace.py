@@ -299,7 +299,9 @@ def register_marketplace_tools(
     async def boards_search(
         q: Annotated[str, Field(description="Search query (e.g. 'raspberry pi hat', 'stm32 breakout').")] = "",
         per_page: Annotated[int, Field(description="Results per page.", ge=1, le=50)] = 20,
-        filter_complex: Annotated[bool, Field(description="If true, excludes motherboards, backplanes, 8+ layer, etc.")] = True,
+        filter_complex: Annotated[
+            bool, Field(description="If true, excludes motherboards, backplanes, 8+ layer, etc.")
+        ] = True,
     ) -> dict:
         """Search GitHub for simple KiCad board projects (breakouts, hats, shields,
         dev boards — excludes complex boards like motherboards, servers, 8+ layer).

@@ -1,4 +1,4 @@
-# start.ps1 — KiCad MCP webapp frontend only
+﻿# start.ps1 - KiCad MCP webapp frontend only
 param([switch]$NoBrowser)
 $ScriptRoot = Split-Path -Parent $PSCommandPath
 $ProjectRoot = Split-Path -Parent $ScriptRoot

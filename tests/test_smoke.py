@@ -1,7 +1,5 @@
 """Smoke test for kicad-mcp server imports and tool registration."""
 
-import pytest
-
 
 def test_import_package():
     """Ensure the kicad_mcp package imports cleanly."""
@@ -12,7 +10,7 @@ def test_import_package():
 
 def test_import_server():
     """Ensure server module imports without KiCad dependencies."""
-    from kicad_mcp.server import app, KICAD_CLI_PATH, WORK_DIR, UPLOAD_DIR, OUTPUT_DIR, _state
+    from kicad_mcp.server import KICAD_CLI_PATH, WORK_DIR, app
 
     assert app is not None
     assert KICAD_CLI_PATH is not None
@@ -21,7 +19,7 @@ def test_import_server():
 
 def test_import_tools():
     """Ensure all tool registration functions are importable."""
-    from kicad_mcp.tools import register_pcb_tools, register_schematic_tools, register_bom_tools, register_library_tools
+    from kicad_mcp.tools import register_bom_tools, register_library_tools, register_pcb_tools, register_schematic_tools
 
     assert callable(register_pcb_tools)
     assert callable(register_schematic_tools)
