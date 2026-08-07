@@ -7,12 +7,12 @@ export VER  := "0.1.0"
 export PORT := "11016"
 export HOST := "0.0.0.0"
 
-# ── Project Configuration ─────────────────────────────────────────────────────
+# --- Project Configuration ---
 
 default:
     @just --list
 
-# ── Lifecycle ─────────────────────────────────────────────────────────────────
+# --- Lifecycle ---
 
 bootstrap:
     uv sync --all-extras
@@ -28,7 +28,7 @@ clean:
 setup: clean bootstrap
     Write-Host "KiCad MCP ready." -ForegroundColor Green
 
-# ── Operation ─────────────────────────────────────────────────────────────────
+# --- Operation ---
 
 serve mode="dual" port=PORT:
     uv run python -m kicad_mcp.server --mode {{mode}} --port {{port}}
@@ -39,7 +39,7 @@ stdio:
 web:
     npx --prefix '{{justfile_directory()}}\webapp' vite --port 11017
 
-# ── Native ─────────────────────────────────────────────────────────────────
+# --- Native ---
 
 build-native:
     Set-Location '{{justfile_directory()}}\native'
@@ -51,12 +51,12 @@ build-native-debug:
     $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
     npx @tauri-apps/cli build --debug
 
-# ── Development ───────────────────────────────────────────────────────────────
+# --- Development ---
 
 dev port=PORT:
     uv run uvicorn kicad_mcp.server:app --reload --port {{port}} --host {{HOST}}
 
-# ── Quality ───────────────────────────────────────────────────────────────────
+# --- Quality ---
 
 lint:
     uv run ruff check src/
@@ -72,7 +72,7 @@ fix:
 
 check: lint test
 
-# ── Testing ───────────────────────────────────────────────────────────────────
+# --- Testing ---
 
 test:
     uv run pytest
@@ -80,7 +80,9 @@ test:
 e2e:
     powershell.exe -NoProfile -NoProfile -ExecutionPolicy Bypass -File "D:\Dev\repos\mcp-central-docs\scripts\playwright-audit.ps1" -RepoPath "{{justfile_directory()}}"
 
-# ── Diagnostics ───────────────────────────────────────────────────────────────
+# --- Diagnostics ---
 
 health:
     curl http://localhost:11016/api/v1/status
+
+# Bootstrap: install dev deps + pre-commit hook

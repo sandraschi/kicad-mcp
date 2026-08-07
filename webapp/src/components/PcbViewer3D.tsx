@@ -1,23 +1,31 @@
-import { useEffect, useRef, useState } from 'react';
-import { apiPost } from '../lib/api';
+import { useEffect, useRef, useState } from "react";
+import { apiPost } from "../lib/api";
 
-export default function PcbViewer3D({ boardName, onBoardChange }: { boardName: string; onBoardChange: (name: string) => void }) {
+export default function PcbViewer3D({
+  boardName,
+  onBoardChange,
+}: {
+  boardName: string;
+  onBoardChange: (name: string) => void;
+}) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [boards, setBoards] = useState<string[]>([]);
   const [glbUrl, setGlbUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    apiPost('/api/v1/board/preview', {}).then((d) => {
-      if (d.boards) setBoards(d.boards.map((b: any) => b.name));
-    }).catch(() => {});
+    apiPost("/api/v1/board/preview", {})
+      .then((d) => {
+        if (d.boards) setBoards(d.boards.map((b: any) => b.name));
+      })
+      .catch(() => {});
   }, []);
 
   const loadBoard = async (name: string) => {
     setLoading(true);
     onBoardChange(name);
     try {
-      const r = await apiPost('/api/v1/board/preview', { file_name: name });
+      const r = await apiPost("/api/v1/board/preview", { file_name: name });
       if (r.success && r.glb_url) setGlbUrl(r.glb_url);
     } catch {}
     setLoading(false);
@@ -26,17 +34,27 @@ export default function PcbViewer3D({ boardName, onBoardChange }: { boardName: s
   useEffect(() => {
     if (!mountRef.current || !glbUrl) return;
     const el = mountRef.current;
-    let controls: any, renderer: any, resizeObserver: any, animId = 0;
+    let controls: any,
+      renderer: any,
+      resizeObserver: any,
+      animId = 0;
 
     async function init() {
-      const THREE = await import('three');
-      const OCMod: any = await import('three/examples/jsm/controls/OrbitControls');
+      const THREE = await import("three");
+      const OCMod: any = await import(
+        "three/examples/jsm/controls/OrbitControls"
+      );
       const OC = OCMod.OrbitControls;
 
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x0a0a0f);
 
-      const camera = new THREE.PerspectiveCamera(45, el.clientWidth / el.clientHeight, 0.1, 1000);
+      const camera = new THREE.PerspectiveCamera(
+        45,
+        el.clientWidth / el.clientHeight,
+        0.1,
+        1000,
+      );
       camera.position.set(80, 60, 80);
 
       renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -65,7 +83,9 @@ export default function PcbViewer3D({ boardName, onBoardChange }: { boardName: s
 
       // Load GLB
       try {
-        const GLTFMod: any = await import('three/examples/jsm/loaders/GLTFLoader');
+        const GLTFMod: any = await import(
+          "three/examples/jsm/loaders/GLTFLoader"
+        );
         const loader = new GLTFMod.GLTFLoader();
         const gltf = await new Promise<any>((resolve, reject) => {
           loader.load(glbUrl, resolve, undefined, reject);
@@ -87,13 +107,28 @@ export default function PcbViewer3D({ boardName, onBoardChange }: { boardName: s
         scene.add(gltf.scene);
       } catch {
         // Fallback: procedural board
-        const mat = new THREE.MeshStandardMaterial({ color: 0x0d5e2e, metalness: 0.1, roughness: 0.8 });
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x0d5e2e,
+          metalness: 0.1,
+          roughness: 0.8,
+        });
         const board = new THREE.Mesh(new THREE.BoxGeometry(40, 1.6, 30), mat);
         board.position.y = -0.8;
         scene.add(board);
-        const traceMat = new THREE.MeshStandardMaterial({ color: 0xcd7f32, metalness: 0.7, roughness: 0.3 });
+        const traceMat = new THREE.MeshStandardMaterial({
+          color: 0xcd7f32,
+          metalness: 0.7,
+          roughness: 0.3,
+        });
         for (let i = 0; i < 20; i++) {
-          const t = new THREE.Mesh(new THREE.BoxGeometry(3 + Math.random() * 8, 0.1, 0.2 + Math.random() * 0.3), traceMat);
+          const t = new THREE.Mesh(
+            new THREE.BoxGeometry(
+              3 + Math.random() * 8,
+              0.1,
+              0.2 + Math.random() * 0.3,
+            ),
+            traceMat,
+          );
           t.position.set(-15 + Math.random() * 30, 0, -12 + Math.random() * 24);
           t.rotation.y = Math.random() * Math.PI;
           scene.add(t);
@@ -123,7 +158,8 @@ export default function PcbViewer3D({ boardName, onBoardChange }: { boardName: s
       if (controls) controls.dispose();
       if (renderer) {
         renderer.dispose();
-        if (renderer.domElement?.parentElement === el) el.removeChild(renderer.domElement);
+        if (renderer.domElement?.parentElement === el)
+          el.removeChild(renderer.domElement);
       }
     };
   }, [glbUrl]);
@@ -137,11 +173,20 @@ export default function PcbViewer3D({ boardName, onBoardChange }: { boardName: s
           className="bg-zinc-800 text-zinc-100 border border-zinc-600 rounded px-2 py-1 text-xs flex-1"
         >
           <option value="">Select a board to preview...</option>
-          {boards.map((b) => <option key={b} value={b}>{b}</option>)}
+          {boards.map((b) => (
+            <option key={b} value={b}>
+              {b}
+            </option>
+          ))}
         </select>
-        {loading && <span className="text-xs text-gray-500">Loading GLB...</span>}
+        {loading && (
+          <span className="text-xs text-gray-500">Loading GLB...</span>
+        )}
       </div>
-      <div ref={mountRef} className="w-full h-72 rounded-lg overflow-hidden bg-zinc-950" />
+      <div
+        ref={mountRef}
+        className="w-full h-72 rounded-lg overflow-hidden bg-zinc-950"
+      />
     </div>
   );
 }

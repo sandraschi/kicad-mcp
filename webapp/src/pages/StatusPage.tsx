@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
-import { apiGet } from '../lib/api';
+import { useEffect, useState } from "react";
+import { apiGet } from "../lib/api";
 
 export default function StatusPage() {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      apiGet('/api/v1/status').then(setStatus).catch(() => {});
+      apiGet("/api/v1/status")
+        .then(setStatus)
+        .catch(() => {});
     }, 3000);
     return () => clearInterval(interval);
   }, []);
@@ -22,7 +24,9 @@ export default function StatusPage() {
               {Object.entries(status).map(([key, value]) => (
                 <tr key={key} className="border-b border-gray-800/50">
                   <td className="py-2 text-gray-400 font-mono">{key}</td>
-                  <td className="py-2 text-gray-200 font-mono">{String(value)}</td>
+                  <td className="py-2 text-gray-200 font-mono">
+                    {String(value)}
+                  </td>
                 </tr>
               ))}
             </tbody>

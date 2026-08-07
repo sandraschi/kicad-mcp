@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { apiPost } from '../lib/api';
+import { useState } from "react";
+import { apiPost } from "../lib/api";
 
 export default function BomPage() {
-  const [fileName, setFileName] = useState('');
-  const [format, setFormat] = useState('grouped_json');
-  const [groupBy, setGroupBy] = useState('value');
+  const [fileName, setFileName] = useState("");
+  const [format, setFormat] = useState("grouped_json");
+  const [groupBy, setGroupBy] = useState("value");
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(false);
 
   const generate = async () => {
     setLoading(true);
     try {
-      const res = await apiPost('/api/v1/control/bom_generate', {
+      const res = await apiPost("/api/v1/control/bom_generate", {
         file_name: fileName,
         output_format: format,
         group_by: groupBy,
@@ -34,12 +34,20 @@ export default function BomPage() {
           value={fileName}
           onChange={(e) => setFileName(e.target.value)}
         />
-        <select className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm" value={format} onChange={(e) => setFormat(e.target.value)}>
+        <select
+          className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
+          value={format}
+          onChange={(e) => setFormat(e.target.value)}
+        >
           <option value="grouped_json">Grouped JSON</option>
           <option value="json">Flat JSON</option>
           <option value="csv">CSV</option>
         </select>
-        <select className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm" value={groupBy} onChange={(e) => setGroupBy(e.target.value)}>
+        <select
+          className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
+          value={groupBy}
+          onChange={(e) => setGroupBy(e.target.value)}
+        >
           <option value="value">Group by Value</option>
           <option value="footprint">Group by Footprint</option>
           <option value="none">No grouping</option>

@@ -1,19 +1,19 @@
-import { Routes, Route } from 'react-router-dom';
-import AppLayout from './components/AppLayout';
-import Dashboard from './pages/Dashboard';
-import PcbPage from './pages/PcbPage';
-import SchematicPage from './pages/SchematicPage';
-import BomPage from './pages/BomPage';
-import LibraryPage from './pages/LibraryPage';
-import MarketplacePage from './pages/MarketplacePage';
-import FilesPage from './pages/FilesPage';
-import DemoPage from './pages/DemoPage';
-import StatusPage from './pages/StatusPage';
-import ChatPage from './pages/ChatPage';
-import FabPage from './pages/FabPage';
-import ReviewsPage from './pages/ReviewsPage';
-import ReviewPage from './pages/ReviewPage';
-import BoardsPage from './pages/BoardsPage';
+import { Route, Routes } from "react-router-dom";
+import AppLayout from "./components/AppLayout";
+import BoardsPage from "./pages/BoardsPage";
+import BomPage from "./pages/BomPage";
+import ChatPage from "./pages/ChatPage";
+import Dashboard from "./pages/Dashboard";
+import DemoPage from "./pages/DemoPage";
+import FabPage from "./pages/FabPage";
+import FilesPage from "./pages/FilesPage";
+import LibraryPage from "./pages/LibraryPage";
+import MarketplacePage from "./pages/MarketplacePage";
+import PcbPage from "./pages/PcbPage";
+import ReviewPage from "./pages/ReviewPage";
+import ReviewsPage from "./pages/ReviewsPage";
+import SchematicPage from "./pages/SchematicPage";
+import StatusPage from "./pages/StatusPage";
 
 export default function App() {
   return (
