@@ -15,9 +15,7 @@ default:
 # --- Lifecycle ---
 
 bootstrap:
-    uv sync --all-extras
-    Set-Location '{{justfile_directory()}}\webapp'
-    cmd /c npm install
+    uv sync --all-extras; Set-Location '{{justfile_directory()}}\webapp'; cmd /c npm install
 
 clean:
     if (Test-Path -Path "__pycache__") { Remove-Item -Recurse -Force "__pycache__" }; \
@@ -42,14 +40,10 @@ web:
 # --- Native ---
 
 build-native:
-    Set-Location '{{justfile_directory()}}\native'
-    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
-    .\build.ps1
+    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"; & '{{justfile_directory()}}\native\build.ps1'
 
 build-native-debug:
-    Set-Location '{{justfile_directory()}}\native'
-    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
-    npx @tauri-apps/cli build --debug
+    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"; Set-Location '{{justfile_directory()}}\native'; npx @tauri-apps/cli build --debug
 
 # --- Development ---
 
@@ -59,16 +53,10 @@ dev port=PORT:
 # --- Quality ---
 
 lint:
-    uv run ruff check src/
-    Set-Location '{{justfile_directory()}}\webapp'
-    npx @biomejs/biome ci .
-    npx tsc --noEmit
+    uv run ruff check src/; Set-Location '{{justfile_directory()}}\webapp'; npx @biomejs/biome ci .; npx tsc --noEmit
 
 fix:
-    uv run ruff check src/ --fix
-    uv run ruff format src/
-    Set-Location '{{justfile_directory()}}\webapp'
-    npx @biomejs/biome check --write .
+    uv run ruff check src/ --fix; uv run ruff format src/; Set-Location '{{justfile_directory()}}\webapp'; npx @biomejs/biome check --write .
 
 check: lint test
 

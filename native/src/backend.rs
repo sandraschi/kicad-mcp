@@ -54,7 +54,10 @@ pub fn materialize_backend(app: &AppHandle) -> Result<PathBuf, String> {
     }
     let bundled = resolve_bundled_backend(app)?;
     log_line(app, &format!("using bundled backend: {}", bundled.display()));
-    Ok(bundled)
+    // Strip Windows extended-length prefix
+    let s = bundled.to_string_lossy().to_string();
+    let clean = s.strip_prefix("\\\\?\\").map(PathBuf::from).unwrap_or(bundled.clone());
+    Ok(clean)
 }
 
 pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, String> {
@@ -69,6 +72,17 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         .args(["/F", "/IM", "kicad-mcp-backend.exe", "/T"])
         .stdout(Stdio::null()).stderr(Stdio::null())
         .status();
+
+    // Wait for the port to actually free up before rebinding - a killed process
+    // can hold the socket in TIME_WAIT briefly, and taskkill returning doesn't
+    // guarantee the OS has released it yet.
+    let free_addr = SocketAddr::from_str(&format!("127.0.0.1:{BACKEND_PORT}")).unwrap();
+    for _ in 0..10 {
+        if TcpStream::connect_timeout(&free_addr, Duration::from_millis(200)).is_err() {
+            break;
+        }
+        thread::sleep(Duration::from_millis(300));
+    }
 
     let backend_path = materialize_backend(&app)?;
     log_line(&app, &format!("spawning {} on port {}", backend_path.display(), BACKEND_PORT));

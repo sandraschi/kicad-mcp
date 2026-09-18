@@ -199,7 +199,7 @@ def resolve_ipc_cli(explicit: str | None = None) -> KicadCliInstall | None:
 
 def ipc_python_available() -> bool:
     try:
-        import kipy  # noqa: F401
+        import kipy  # noqa: F401  # pyright: ignore[reportMissingImports]
 
         return True
     except ImportError:

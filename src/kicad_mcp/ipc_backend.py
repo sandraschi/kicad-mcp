@@ -41,7 +41,7 @@ class IpcHeadlessBackend:
         return await asyncio.get_running_loop().run_in_executor(None, self._dispatch_sync, method, params or {})
 
     def _ensure_kicad(self, preload_path: str | None = None) -> dict | None:
-        from kipy import KiCad
+        from kipy import KiCad  # pyright: ignore[reportMissingImports]
 
         target = preload_path or self._loaded_path
         if self._kicad is not None and preload_path and preload_path != self._loaded_path:
@@ -77,7 +77,7 @@ class IpcHeadlessBackend:
         return board
 
     def _layer_from_name(self, layer_name: str) -> int:
-        from kipy.board_types import BoardLayer
+        from kipy.board_types import BoardLayer  # pyright: ignore[reportMissingImports]
 
         mapping = {
             "F.Cu": BoardLayer.BL_F_Cu,
@@ -173,7 +173,7 @@ class IpcHeadlessBackend:
         }
 
     def _handle_pcb_list_components(self, _params: dict) -> dict:
-        from kipy.board_types import BoardLayer
+        from kipy.board_types import BoardLayer  # pyright: ignore[reportMissingImports]
 
         self._ensure_kicad()
         board = self._board()
@@ -280,9 +280,9 @@ class IpcHeadlessBackend:
         }
 
     def _handle_pcb_add_track(self, params: dict) -> dict:
-        from kipy.board_types import Net, Track
-        from kipy.geometry import Vector2
-        from kipy.util import from_mm
+        from kipy.board_types import Net, Track  # pyright: ignore[reportMissingImports]
+        from kipy.geometry import Vector2  # pyright: ignore[reportMissingImports]
+        from kipy.util import from_mm  # pyright: ignore[reportMissingImports]
 
         self._ensure_kicad()
         board = self._board()
@@ -301,9 +301,9 @@ class IpcHeadlessBackend:
         return {"success": True, "data": {"type": "TRACK", "length_mm": length_mm, "backend": "ipc-headless"}}
 
     def _handle_pcb_add_via(self, params: dict) -> dict:
-        from kipy.board_types import Net, Via
-        from kipy.geometry import Vector2
-        from kipy.util import from_mm
+        from kipy.board_types import Net, Via  # pyright: ignore[reportMissingImports]
+        from kipy.geometry import Vector2  # pyright: ignore[reportMissingImports]
+        from kipy.util import from_mm  # pyright: ignore[reportMissingImports]
 
         self._ensure_kicad()
         board = self._board()
@@ -338,10 +338,10 @@ class IpcHeadlessBackend:
         return {"success": True, "data": {"path": self._loaded_path, "backend": "ipc-headless"}}
 
     def _handle_pcb_set_board_outline(self, params: dict) -> dict:
-        from kipy.board_types import BoardLayer, BoardPolygon
-        from kipy.common_types import PolygonWithHoles
-        from kipy.geometry import PolyLine, PolyLineNode
-        from kipy.util import from_mm
+        from kipy.board_types import BoardLayer, BoardPolygon  # pyright: ignore[reportMissingImports]
+        from kipy.common_types import PolygonWithHoles  # pyright: ignore[reportMissingImports]
+        from kipy.geometry import PolyLine, PolyLineNode  # pyright: ignore[reportMissingImports]
+        from kipy.util import from_mm  # pyright: ignore[reportMissingImports]
 
         points = params.get("points", [])
         if len(points) < 3:

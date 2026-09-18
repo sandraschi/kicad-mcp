@@ -8,9 +8,9 @@ Architecture:
                    → JSON response
 
 Execution lanes:
-  1. Stable kicad-cli — exports, DRC, ERC, library CLI (KICAD_CLI_PATH, typically 10.x)
-  2. IPC headless CRUD — pcb load/save, tracks, vias (KICAD_IPC_CLI_PATH, 11 nightly)
-  3. TCP bridge — pcbnew via KiCad GUI + kc_bridge.py (deprecated on 11 nightlies)
+  1. Stable kicad-cli - exports, DRC, ERC, library CLI (KICAD_CLI_PATH, typically 10.x)
+  2. IPC headless CRUD - pcb load/save, tracks, vias (KICAD_IPC_CLI_PATH, 11 nightly)
+  3. TCP bridge - pcbnew via KiCad GUI + kc_bridge.py (deprecated on 11 nightlies)
 """
 
 import asyncio
@@ -90,7 +90,7 @@ async def _bridge_send(method: str, params: dict | None = None, timeout: float =
     req = {"id": _req_id, "method": method, "params": params or {}}
     payload = json.dumps(req) + "\n"
 
-    if _bridge_writer is None:
+    if _bridge_writer is None or _bridge_reader is None:
         return {"success": False, "error": "KiCad bridge not connected", "fallback": True}
 
     try:
@@ -231,7 +231,7 @@ async def lifespan(app: FastAPI):
         _state["ipc_api_server"] = ipc_install.has_api_server
         ipc_ready = ipc_install.has_api_server and _state["ipc_python_installed"]
         if ipc_install.has_api_server and not _state["ipc_python_installed"]:
-            logger.warning("KiCad IPC CLI found but kicad-python (kipy) not installed — run: uv sync --extra ipc")
+            logger.warning("KiCad IPC CLI found but kicad-python (kipy) not installed - run: uv sync --extra ipc")
 
     # 3. Legacy TCP bridge (optional)
     bridge_already = False
@@ -269,7 +269,7 @@ async def lifespan(app: FastAPI):
             logger.warning("IPC ping failed: %s", ping.get("error"))
     elif crud_backend == "none":
         if _state["kicad_ok"]:
-            logger.info("Export lane only (stable kicad-cli); no CRUD backend — see docs/NIGHTLY_HEADLESS.md")
+            logger.info("Export lane only (stable kicad-cli); no CRUD backend - see docs/NIGHTLY_HEADLESS.md")
         else:
             logger.warning("KiCad not detected")
 
@@ -292,7 +292,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="KiCad MCP",
-    description="KiCad PCB/schematic design automation — MCP tools + REST API",
+    description="KiCad PCB/schematic design automation - MCP tools + REST API",
     version="0.3.0",
     lifespan=lifespan,
 )
@@ -729,7 +729,7 @@ async def api_component_detail(query: str):
             "manufacturer": "Texas Instruments",
             "package": "SOIC-8",
             "pins": 8,
-            "description": f"Component matching '{query}' — parametric data",
+            "description": f"Component matching '{query}' - parametric data",
             "datasheet": f"https://www.ti.com/product/{query}",
             "stock": 12500,
             "price_1k": 0.42,
