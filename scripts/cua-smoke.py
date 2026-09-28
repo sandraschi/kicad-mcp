@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """CUA smoke test for NSIS-installed fleet apps (pywinauto-mcp canary).
 
-CUA_SMOKE_VERSION = 12
+CUA_SMOKE_VERSION = 13
 If this file differs from templates/tauri-native/scripts/cua-smoke.py in
-mcp-central-docs, copy the template over — version number will have changed.
+mcp-central-docs, copy the template over - version number will have changed.
 
 Usage:
     python scripts/cua-smoke.py
@@ -58,7 +58,7 @@ def load_config(path: str | None = None) -> dict:
     return {k: _expand(v) for k, v in cfg.items()}
 
 
-CUA_SMOKE_VERSION = 12  # bump when template changes; see docstring
+CUA_SMOKE_VERSION = 13  # bump when template changes; see docstring
 
 
 def _check_version():
@@ -138,7 +138,7 @@ def cua_available() -> bool:
 
 
 def _find_tauri_window(title_re: str):
-    """Find Tauri webview window — excludes classic apps by class_name."""
+    """Find Tauri webview window - excludes classic apps by class_name."""
     wins = pywinauto.findwindows.find_elements(title_re=title_re)
     tauri = [w for w in wins if w.class_name != "QMainWindow"]
     if not tauri:
@@ -239,7 +239,7 @@ def cua_click(window_handle: int, x: int, y: int):
 
 
 def _release_mouse():
-    """Release all mouse buttons and dismiss any stray context menu — call after
+    """Release all mouse buttons and dismiss any stray context menu - call after
     any clicking to prevent stuck input. UIA click_input() on some WebView2/Chromium
     elements fires through the accessibility Invoke pattern rather than a true
     synthetic click, which Chromium can map to a contextmenu event when no direct
@@ -267,7 +267,7 @@ def _release_mouse():
 
 
 class PhaseFailed(Exception):
-    """Non-fatal phase failure — script continues to uninstall."""
+    """Non-fatal phase failure - script continues to uninstall."""
 
 
 def fatal(msg: str):
@@ -465,7 +465,7 @@ def verify_webview_bridge(output_dir: str):
             time.sleep(5)
     if text:
         log(f"WebView OCR text: {text[:200]}")
-        phase_fail(f"WebView bridge not OK — likely API_BASE/CSP/CORS (expected '{BRIDGE_OK_TEXT}')")
+        phase_fail(f"WebView bridge not OK - likely API_BASE/CSP/CORS (expected '{BRIDGE_OK_TEXT}')")
     else:
         log("WebView bridge check skipped (no OCR available)")
 
@@ -503,12 +503,12 @@ def _verify_page_ocr(text: str, label: str, expected: str) -> bool:
             log(f"  Page '{label}': ERROR keyword '{kw}' found in OCR")
             return False
     if not text.strip():
-        log(f"  Page '{label}': EMPTY OCR — page may be blank or not loading")
+        log(f"  Page '{label}': EMPTY OCR - page may be blank or not loading")
         return False
     if expected.lower() in text_lower:
         log(f"  Page '{label}': V OK (found '{expected}')")
         return True
-    log(f"  Page '{label}': X expected '{expected}' not found in OCR — page may be wrong")
+    log(f"  Page '{label}': X expected '{expected}' not found in OCR - page may be wrong")
     return False
 
 
@@ -786,7 +786,7 @@ def main():
     fatal_failed = False
 
     print(f"\n{'=' * 50}")
-    print(f"  CUA Smoke Test — {PRODUCT_NAME}")
+    print(f"  CUA Smoke Test - {PRODUCT_NAME}")
     print(f"{'=' * 50}\n")
 
     if not _HAS_PYWAUTO:
@@ -818,17 +818,17 @@ def main():
     print(f"{'=' * 50}")
     print(f"  Result: {passed}/{passed + failed} phases passed")
     if not _HAS_PYWAUTO:
-        print("  WARNING: pywinauto was NOT importable in this venv — every GUI-driven")
+        print("  WARNING: pywinauto was NOT importable in this venv - every GUI-driven")
         print("  phase (window verify, screenshot, WebView OCR, nav click-through) was")
         print("  SILENTLY SKIPPED, not verified. This run does NOT prove the UI works.")
         print("  Fix: add pywinauto, pillow, pytesseract as dev dependencies and re-run.")
     if failed:
         print(f"  {failed} phase(s) FAILED")
     if fatal_failed:
-        print("  FATAL phase failure — see above")
+        print("  FATAL phase failure - see above")
         sys.exit(1)
     if failed or not _HAS_PYWAUTO:
-        print("  NOT ALL PHASES PASSED — do not report this run as a clean pass")
+        print("  NOT ALL PHASES PASSED - do not report this run as a clean pass")
         print(f"{'=' * 50}\n")
         sys.exit(1)
     print("  ALL PHASES PASSED")
