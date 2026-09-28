@@ -7,6 +7,8 @@ node_modules/
 dist/
 .vite/
 *.tsbuildinfo
+test-results/
+playwright-report/
 htmlcov/
 .coverage
 *.egg-info/
