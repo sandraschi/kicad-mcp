@@ -16,9 +16,9 @@ from typing import Annotated
 
 from pydantic import Field
 
-logger = logging.getLogger("kicad-mcp.bom")
+from kicad_mcp.tools._annotations import MUTATING as _MUTATING
 
-_MUTATING = {"readonly": False, "mutating": True}
+logger = logging.getLogger("kicad-mcp.bom")
 
 
 def register_bom_tools(

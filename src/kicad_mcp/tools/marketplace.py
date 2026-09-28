@@ -16,10 +16,10 @@ from typing import Annotated
 import httpx
 from pydantic import Field
 
-logger = logging.getLogger("kicad-mcp.marketplace")
+from kicad_mcp.tools._annotations import MUTATING as _MUTATING
+from kicad_mcp.tools._annotations import READ_ONLY as _READ_ONLY
 
-_READ_ONLY = {"readonly": True}
-_MUTATING = {"readonly": False, "mutating": True}
+logger = logging.getLogger("kicad-mcp.marketplace")
 
 GITHUB_API = "https://api.github.com"
 GITHUB_HEADERS = {}

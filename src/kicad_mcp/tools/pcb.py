@@ -14,10 +14,10 @@ from typing import Annotated
 
 from pydantic import Field
 
-logger = logging.getLogger("kicad-mcp.pcb")
+from kicad_mcp.tools._annotations import MUTATING as _MUTATING
+from kicad_mcp.tools._annotations import READ_ONLY as _READ_ONLY
 
-_READ_ONLY = {"readonly": True}
-_MUTATING = {"readonly": False, "mutating": True}
+logger = logging.getLogger("kicad-mcp.pcb")
 
 
 def register_pcb_tools(
