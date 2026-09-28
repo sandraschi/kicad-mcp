@@ -1,5 +1,5 @@
 """
-KiCad MCP tool modules — portmanteau re-exports.
+KiCad MCP tool modules - portmanteau re-exports.
 
 Each submodule registers its tools via a register_* function that accepts
 the FastMCP instance and server dependencies (pcbnew module, kicad-cli path,

@@ -1,4 +1,4 @@
-"""Design review router — board annotations, AI audit, sharing."""
+"""Design review router - board annotations, AI audit, sharing."""
 
 import os
 import sqlite3
@@ -103,7 +103,7 @@ async def review_ai_audit(review_id: str):
     if not review:
         raise HTTPException(status_code=404)
     suggestions = [
-        "Verify clearance between adjacent copper pours — consider 0.2mm minimum",
+        "Verify clearance between adjacent copper pours - consider 0.2mm minimum",
         "Check via-in-pad clearance for BGA fanout",
         "Review thermal relief spokes on ground-connected pads",
         "Ensure differential pair impedance matching on high-speed traces",

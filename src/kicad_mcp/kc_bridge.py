@@ -1,8 +1,8 @@
 """
-KiCad TCP Bridge — runs inside KiCad's Python console for board manipulation.
+KiCad TCP Bridge - runs inside KiCad's Python console for board manipulation.
 
 This script is designed to be executed from within KiCad's Scripting Console
-(Tools → Scripting Console) or passed as a startup script. It opens a TCP
+(Tools -> Scripting Console) or passed as a startup script. It opens a TCP
 socket and listens for JSON-RPC commands from the MCP server.
 
 Supports both READ and WRITE operations on the BOARD object via pcbnew API.
@@ -12,7 +12,7 @@ Bridge-required operations (no kicad-cli equivalent):
     pcb_save, pcb_set_board_outline, pcb_drc, pcb_export_step, ping, status
 
 Environment:
-    KC_BRIDGE_PORT — TCP port to listen on (default 11018)
+    KC_BRIDGE_PORT - TCP port to listen on (default 11018)
 """
 
 import json
@@ -43,7 +43,7 @@ def _to_dict(obj):
         return {k: _to_dict(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
         return [_to_dict(v) for v in obj]
-    # pcbnew objects — extract attributes
+    # pcbnew objects - extract attributes
     result = {}
     for attr in dir(obj):
         if attr.startswith("_"):

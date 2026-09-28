@@ -1,4 +1,4 @@
-"""Fabrication pipeline router — Gerber export, zip, order tracking."""
+"""Fabrication pipeline router - Gerber export, zip, order tracking."""
 
 import os
 import sqlite3
