@@ -14,7 +14,7 @@ Get-NetTCPConnection -LocalPort $FrontendPort -ErrorAction SilentlyContinue |
     ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
 
 Write-Host "Starting KiCad MCP frontend on port $FrontendPort..." -ForegroundColor Cyan
-$proc = Start-Process -NoNewWindow -FilePath "npx" -ArgumentList "vite --port $FrontendPort" -WorkingDirectory $ScriptRoot -PassThru
+$proc = Start-Process -NoNewWindow -FilePath "cmd.exe" -ArgumentList "/c","npx vite --port $FrontendPort" -WorkingDirectory $ScriptRoot -PassThru
 
 Start-Sleep 3
 if (-not $NoBrowser) {

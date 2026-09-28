@@ -1,5 +1,13 @@
-import { CircuitBoard, Cpu, Layers, RefreshCw, Wrench } from "lucide-react";
+import {
+  CircuitBoard,
+  Cpu,
+  Layers,
+  RefreshCw,
+  Sparkles,
+  Wrench,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import PcbViewer3D from "../components/PcbViewer3D";
 import { apiGet } from "../lib/api";
 
@@ -77,6 +85,28 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Hero */}
+      <section className="mb-6 rounded-xl border border-gray-800 bg-gradient-to-br from-gray-900 to-black p-8">
+        <h2 className="text-3xl font-bold">
+          Automate <span className="text-emerald-400">KiCad</span> without
+          opening pcbnew
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-gray-400">
+          Export CLI, IPC nightly bridge, and legacy TCP bridge in one hybrid
+          backend - PCB, schematic, BOM, and library tools exposed as MCP tools
+          and a REST API, no KiCad GUI required.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link
+            to="/demo"
+            data-testid="cta-demo"
+            className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-black hover:bg-emerald-400"
+          >
+            <Sparkles className="h-4 w-4" /> Run the export demo
+          </Link>
+        </div>
+      </section>
+
       {/* 3D Board Preview */}
       <div className="mb-6 bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
         <div className="px-4 py-2 border-b border-gray-800 flex items-center justify-between">
@@ -132,7 +162,7 @@ export default function Dashboard() {
           ) : null}
           {status.ipc_python_installed === false ? (
             <div className="text-amber-500">
-              kicad-python not installed — run uv sync --extra ipc
+              kicad-python not installed - run uv sync --extra ipc
             </div>
           ) : null}
         </div>

@@ -1,7 +1,11 @@
-"""PyInstaller entry point — dual transport (MCP_PORT → HTTP, fallback → stdio)."""
-import os
+"""PyInstaller entry point - dual transport (MCP_PORT -> HTTP, fallback -> stdio)."""
+
+import _datetime  # noqa: F401
 import _strptime  # noqa: F401
+import os
 import sys
+
+import mcp.types  # noqa: F401  -- freeze mcp bootstrap before fastmcp (PITFALLS §E)
 
 sys.path.insert(0, ".")
 
@@ -13,4 +17,3 @@ if port:
 from kicad_mcp.server import main
 
 main()
-

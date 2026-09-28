@@ -6,6 +6,7 @@ __pycache__/
 node_modules/
 dist/
 .vite/
+*.tsbuildinfo
 htmlcov/
 .coverage
 *.egg-info/
