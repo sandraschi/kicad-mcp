@@ -49,10 +49,10 @@ from kicad_mcp.tools import (
     register_pcb_tools,
     register_schematic_tools,
 )
+from kicad_mcp.tools._annotations import READ_ONLY as _READ_ONLY
 
 logger = logging.getLogger("kicad-mcp")
 
-_READ_ONLY = {"readonly": True}
 _START_TIME = time.time()
 
 # ── Config ───────────────────────────────────────────────────────────────────
@@ -341,6 +341,7 @@ _sch_tools = register_schematic_tools(
     run_kicad_cli=_run_kicad_cli,
     upload_dir=UPLOAD_DIR,
     output_dir=OUTPUT_DIR,
+    kicad_cli_path=KICAD_CLI_PATH,
 )
 
 _bom_tools = register_bom_tools(

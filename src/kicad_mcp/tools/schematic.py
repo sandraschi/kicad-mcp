@@ -27,8 +27,41 @@ def register_schematic_tools(
     run_kicad_cli,
     upload_dir: str,
     output_dir: str,
+    kicad_cli_path: str | None = None,
 ):
     """Register all Schematic MCP tools on the FastMCP instance."""
+
+    async def _write_and_validate(path: str, tree: list, original: str | None) -> dict | None:
+        """Serialize+write `tree` to `path`, then validate with a real ERC run.
+
+        Returns None on success. On failure, restores `original` content (or
+        deletes the file if it didn't exist before) and returns an error dict
+        the caller should return directly -- this is the safety net for the
+        sch_sexpr-based editing in sch_edit.py: a file this couldn't actually
+        parse and electrically-check is never left on disk.
+        """
+        from kicad_mcp.sch_sexpr import serialize_file
+
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(serialize_file(tree))
+
+        validate_report = os.path.join(output_dir, "_edit_validate_erc.json")
+        check = await run_kicad_cli(
+            ["sch", "erc", path, "--severity-error", "--format", "json", "--output", validate_report]
+        )
+        if check["success"]:
+            return None
+
+        if original is not None:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(original)
+        else:
+            os.remove(path)
+        return {
+            "success": False,
+            "message": "Edit produced a file kicad-cli could not validate; change was rolled back.",
+            "data": {"kicad_cli_stderr": check.get("stderr", "")},
+        }
 
     # ── sch_load ────────────────────────────────────────────────────────
 
@@ -101,15 +134,231 @@ def register_schematic_tools(
         path = os.path.join(upload_dir, file_name) if not os.path.isabs(file_name) else file_name
         report_path = os.path.join(output_dir, "erc_report.json")
 
-        result = await run_kicad_cli(["sch", "erc", path, "--severity", severity, "--output", report_path])
+        # kicad-cli's real `sch erc` flags are --severity-error/--severity-warning/
+        # --severity-all (not a single --severity VALUE), and --format json is
+        # required or it writes a human-readable text report instead of JSON --
+        # both confirmed against the installed kicad-cli's own --help output and
+        # a real run, since the previous invocation ("--severity", severity) has
+        # always failed with "Unknown argument: --severity" on this CLI version.
+        severity_flags = {
+            "error": ["--severity-error"],
+            "warning": ["--severity-error", "--severity-warning"],
+            "all": ["--severity-all"],
+        }.get(severity, ["--severity-error", "--severity-warning"])
+        result = await run_kicad_cli(["sch", "erc", path, *severity_flags, "--format", "json", "--output", report_path])
         if result["success"]:
             if os.path.isfile(report_path):
                 with open(report_path) as f:
                     erc_data = json.load(f)
-                violations = erc_data.get("violations", [])
+                # Violations are nested per-sheet (erc_data["sheets"][i]["violations"]),
+                # not a top-level "violations" key -- the prior code read a key that
+                # never existed in the real schema and always silently got [].
+                violations = [v for sheet in erc_data.get("sheets", []) for v in sheet.get("violations", [])]
                 return {"success": True, "data": {"violations": violations, "count": len(violations)}}
             return {"success": True, "data": {"raw": result["stdout"]}}
         return {"success": False, "message": result.get("stderr", "ERC failed"), "data": None}
+
+    # ── sch_add_wire ──────────────────────────────────────────────────────
+
+    @mcp.tool(annotations=_MUTATING, version="0.1.0")
+    async def sch_add_wire(
+        file_name: Annotated[str, Field(description="KiCad schematic filename.")],
+        x1: Annotated[float, Field(description="Start X coordinate (mm).")],
+        y1: Annotated[float, Field(description="Start Y coordinate (mm).")],
+        x2: Annotated[float, Field(description="End X coordinate (mm).")],
+        y2: Annotated[float, Field(description="End Y coordinate (mm).")],
+        width_mm: Annotated[float, Field(description="Wire width in mm (0 = KiCad default).")] = 0.0,
+    ) -> dict:
+        """Add a wire segment to a schematic.
+
+        Edits the .kicad_sch file directly as an S-expression (KiCad's IPC API
+        doesn't expose schematic CRUD yet -- see docs/NIGHTLY_HEADLESS.md). The
+        write is validated with a real `kicad-cli sch erc` run before being kept;
+        an edit that produces a file kicad-cli can't load is rolled back
+        automatically and reported as a failure.
+
+        ## Return Format
+        {"success": bool, "message": str, "data": {"uuid": str}}
+
+        ## Examples
+        await sch_add_wire(file_name="amplifier.kicad_sch", x1=100, y1=100, x2=150, y2=100)
+        """
+        from kicad_mcp.sch_edit import add_wire
+        from kicad_mcp.sch_sexpr import parse
+
+        path = os.path.join(upload_dir, file_name) if not os.path.isabs(file_name) else file_name
+        if not os.path.isfile(path):
+            return {"success": False, "message": f"File not found: {file_name}", "data": None}
+
+        with open(path, encoding="utf-8") as f:
+            original = f.read()
+        try:
+            tree = parse(original)
+            wire_uuid = add_wire(tree, x1, y1, x2, y2, width_mm)
+        except ValueError as exc:
+            return {"success": False, "message": f"Could not parse schematic: {exc}", "data": None}
+
+        error = await _write_and_validate(path, tree, original)
+        if error:
+            return error
+        return {"success": True, "message": f"Added wire ({x1},{y1}) -> ({x2},{y2})", "data": {"uuid": wire_uuid}}
+
+    # ── sch_add_label ─────────────────────────────────────────────────────
+
+    @mcp.tool(annotations=_MUTATING, version="0.1.0")
+    async def sch_add_label(
+        file_name: Annotated[str, Field(description="KiCad schematic filename.")],
+        text: Annotated[str, Field(description="Label text (net name).")],
+        x: Annotated[float, Field(description="X coordinate (mm).")],
+        y: Annotated[float, Field(description="Y coordinate (mm).")],
+        angle: Annotated[float, Field(description="Rotation in degrees (0, 90, 180, 270).")] = 0.0,
+        kind: Annotated[str, Field(description="Label kind: 'local', 'global', or 'hierarchical'.")] = "local",
+        shape: Annotated[
+            str,
+            Field(
+                description="Shape for global/hierarchical labels: input, output, bidirectional, tri_state, passive."
+            ),
+        ] = "input",
+    ) -> dict:
+        """Add a local, global, or hierarchical label to a schematic.
+
+        Edits the .kicad_sch file directly (see sch_add_wire's docstring for
+        why). Validated with a real ERC run before being kept.
+
+        ## Return Format
+        {"success": bool, "message": str, "data": {"uuid": str}}
+
+        ## Examples
+        await sch_add_label(file_name="amplifier.kicad_sch", text="VCC", x=100, y=100, kind="global", shape="input")
+        """
+        from kicad_mcp.sch_edit import add_label
+        from kicad_mcp.sch_sexpr import parse
+
+        path = os.path.join(upload_dir, file_name) if not os.path.isabs(file_name) else file_name
+        if not os.path.isfile(path):
+            return {"success": False, "message": f"File not found: {file_name}", "data": None}
+
+        with open(path, encoding="utf-8") as f:
+            original = f.read()
+        try:
+            tree = parse(original)
+            label_uuid = add_label(tree, text, x, y, angle, kind, shape)
+        except ValueError as exc:
+            return {"success": False, "message": str(exc), "data": None}
+
+        error = await _write_and_validate(path, tree, original)
+        if error:
+            return error
+        return {"success": True, "message": f"Added {kind} label '{text}'", "data": {"uuid": label_uuid}}
+
+    # ── sch_add_component ────────────────────────────────────────────────
+
+    @mcp.tool(annotations=_MUTATING, version="0.1.0")
+    async def sch_add_component(
+        file_name: Annotated[str, Field(description="KiCad schematic filename.")],
+        lib_id: Annotated[str, Field(description="Library symbol id, e.g. 'Device:R', 'Device:C', 'Device:LED'.")],
+        x: Annotated[float, Field(description="X coordinate (mm).")],
+        y: Annotated[float, Field(description="Y coordinate (mm).")],
+        angle: Annotated[float, Field(description="Rotation in degrees (0, 90, 180, 270).")] = 0.0,
+        reference: Annotated[
+            str, Field(description="Reference designator, or '?' suffix (e.g. 'R?') to assign later via sch_annotate.")
+        ] = "R?",
+        value: Annotated[str, Field(description="Value field (e.g. '10k', '100nF').")] = "",
+        footprint: Annotated[str, Field(description="Footprint field, e.g. 'Resistor_SMD:R_0603_1608Metric'.")] = "",
+    ) -> dict:
+        """Place a symbol instance from KiCad's bundled libraries onto a schematic.
+
+        The symbol's real definition is copied from KiCad's own installed
+        library files (not hand-authored), so only symbols that exist in
+        those libraries can be placed -- use lib_search_symbol first if
+        unsure of the exact lib_id. Edits the .kicad_sch file directly (see
+        sch_add_wire's docstring for why) and validates with a real ERC run
+        before keeping the change.
+
+        ## Return Format
+        {"success": bool, "message": str, "data": {"uuid": str, "reference": str}}
+
+        ## Examples
+        await sch_add_component(file_name="amplifier.kicad_sch", lib_id="Device:R", x=100, y=150, value="4.7k")
+        """
+        from kicad_mcp.sch_edit import add_component, resolve_symbols_dir
+        from kicad_mcp.sch_sexpr import parse
+
+        path = os.path.join(upload_dir, file_name) if not os.path.isabs(file_name) else file_name
+        if not os.path.isfile(path):
+            return {"success": False, "message": f"File not found: {file_name}", "data": None}
+
+        symbols_dir = resolve_symbols_dir(state.get("kicad_cli_path") or kicad_cli_path)
+        if not symbols_dir:
+            return {
+                "success": False,
+                "message": "Could not locate KiCad's bundled symbol library directory (no working kicad-cli).",
+                "data": None,
+            }
+
+        with open(path, encoding="utf-8") as f:
+            original = f.read()
+        try:
+            tree = parse(original)
+            sym_uuid, assigned_ref = add_component(
+                tree, path, lib_id, x, y, symbols_dir, angle, reference, value, footprint
+            )
+        except (ValueError, FileNotFoundError) as exc:
+            return {"success": False, "message": str(exc), "data": None}
+
+        error = await _write_and_validate(path, tree, original)
+        if error:
+            return error
+        return {
+            "success": True,
+            "message": f"Placed {lib_id} as {assigned_ref}",
+            "data": {"uuid": sym_uuid, "reference": assigned_ref},
+        }
+
+    # ── sch_annotate ──────────────────────────────────────────────────────
+
+    @mcp.tool(annotations=_MUTATING, version="0.1.0")
+    async def sch_annotate(
+        file_name: Annotated[str, Field(description="KiCad schematic filename.")],
+    ) -> dict:
+        """Assign sequential reference designators to un-annotated symbols (e.g. 'R?' -> 'R7').
+
+        Only touches symbols whose Reference property ends in '?' or is empty;
+        existing fully-assigned references are left untouched and their numbers
+        are never reused. Validated with a real ERC run before being kept.
+
+        ## Return Format
+        {"success": bool, "message": str, "data": {"changes": [[old, new], ...], "count": int}}
+
+        ## Examples
+        await sch_annotate(file_name="amplifier.kicad_sch")
+        """
+        from kicad_mcp.sch_edit import annotate
+        from kicad_mcp.sch_sexpr import parse
+
+        path = os.path.join(upload_dir, file_name) if not os.path.isabs(file_name) else file_name
+        if not os.path.isfile(path):
+            return {"success": False, "message": f"File not found: {file_name}", "data": None}
+
+        with open(path, encoding="utf-8") as f:
+            original = f.read()
+        try:
+            tree = parse(original)
+            changes = annotate(tree)
+        except ValueError as exc:
+            return {"success": False, "message": f"Could not parse schematic: {exc}", "data": None}
+
+        if not changes:
+            return {"success": True, "message": "No un-annotated symbols found", "data": {"changes": [], "count": 0}}
+
+        error = await _write_and_validate(path, tree, original)
+        if error:
+            return error
+        return {
+            "success": True,
+            "message": f"Annotated {len(changes)} symbol(s)",
+            "data": {"changes": changes, "count": len(changes)},
+        }
 
     # ── sch_export_netlist ──────────────────────────────────────────────
 
@@ -274,6 +523,10 @@ def register_schematic_tools(
         "sch_load": sch_load,
         "sch_info": sch_info,
         "sch_erc": sch_erc,
+        "sch_add_wire": sch_add_wire,
+        "sch_add_label": sch_add_label,
+        "sch_add_component": sch_add_component,
+        "sch_annotate": sch_annotate,
         "sch_export_netlist": sch_export_netlist,
         "sch_export_python_bom": sch_export_python_bom,
         "sch_export_pdf": sch_export_pdf,
