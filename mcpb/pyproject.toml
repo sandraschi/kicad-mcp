@@ -1,11 +1,11 @@
 [project]
 name = "kicad-mcp"
 version = "0.3.0"
-description = "KiCad MCP server — PCB/schematic design automation via MCP tools and REST API"
+description = "KiCad MCP server - PCB/schematic design automation via MCP tools and REST API"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastmcp==3.2.0",
+    "fastmcp>=3.4.4,<4",
     "httpx>=0.27",
     "pydantic>=2.0",
     "fastapi>=0.104",
@@ -21,7 +21,7 @@ ipc = [
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
-    "ruff>=0.9",
+    "ruff>=0.16.0,<0.17",
 ]
 
 [build-system]
@@ -43,10 +43,19 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "S", "UP", "RUF"]
-ignore = ["S101"]
+ignore = ["S101", "S106", "RUF012", "S603", "S607", "S324", "E402"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/**/*.py" = ["E501"]
 "tests/**/*.py" = ["E501", "S101"]
 "src/kicad_mcp/kc_bridge.py" = ["S110"]
 "src/kicad_mcp/server.py" = ["S603", "S110", "S607", "S104"]
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.22.2",
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.4.0",
+    "pywin32>=311",
+    "ruff>=0.16.0,<0.17",
+]
