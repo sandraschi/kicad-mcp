@@ -1,1 +1,0 @@
-('D:\\Dev\\repos\\kicad-mcp\\build\\kicad-mcp-backend\\PYZ-00.pyz', [])
