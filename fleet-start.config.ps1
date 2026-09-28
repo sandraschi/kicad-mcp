@@ -5,7 +5,7 @@
     BackendPort  = 11016
     FrontendPort = 11017
     HealthPath   = '/api/v1/status'
-    WebRoot      = 'D:\Dev\repos\kicad-mcp\webapp'
+    WebRoot      = 'webapp'
     Backend = @{
         Kind          = 'uvicorn'
         UvicornTarget = 'kicad_mcp.server:app'

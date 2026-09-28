@@ -45,6 +45,9 @@ build-native:
 build-native-debug:
     $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"; Set-Location '{{justfile_directory()}}\native'; npx @tauri-apps/cli build --debug
 
+cua-nsis-test:
+    uv run python '{{justfile_directory()}}\scripts\cua-smoke.py'
+
 # --- Development ---
 
 dev port=PORT:
