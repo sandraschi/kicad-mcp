@@ -3,6 +3,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
+use std::os::windows::process::CommandExt;
 use std::str::FromStr;
 use std::sync::Mutex;
 use std::thread;
@@ -15,6 +16,7 @@ pub struct BackendProcess(pub Mutex<Option<Child>>);
 
 const BACKEND_NAME: &str = "kicad-mcp-backend.exe";
 const BACKEND_PORT: u16 = 11016;
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 fn dev_backend_path() -> Option<PathBuf> {
     if !cfg!(debug_assertions) { return None; }
@@ -34,13 +36,16 @@ fn log_line(app: &AppHandle, message: &str) {
 }
 
 fn resolve_bundled_backend(app: &AppHandle) -> Result<PathBuf, String> {
+    // Prefer resources/ - a flat {install_dir}/{BACKEND_NAME} is a known stale-shadow
+    // trap (orphaned copies from old installs aren't tracked by the NSIS uninstaller
+    // and never get overwritten by a fresh build). See TAURI_PRODUCTION_PITFALLS.md §F.
     let mut tried = Vec::new();
-    if let Ok(path) = app.path().resolve(BACKEND_NAME, BaseDirectory::Resource) {
+    let resources_path = format!("resources/{BACKEND_NAME}");
+    if let Ok(path) = app.path().resolve(&resources_path, BaseDirectory::Resource) {
         tried.push(path.display().to_string());
         if path.exists() { return Ok(path); }
     }
-    let resources_path = format!("resources/{BACKEND_NAME}");
-    if let Ok(path) = app.path().resolve(&resources_path, BaseDirectory::Resource) {
+    if let Ok(path) = app.path().resolve(BACKEND_NAME, BaseDirectory::Resource) {
         tried.push(path.display().to_string());
         if path.exists() { return Ok(path); }
     }
@@ -71,6 +76,7 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
     let _ = Command::new("taskkill.exe")
         .args(["/F", "/IM", "kicad-mcp-backend.exe", "/T"])
         .stdout(Stdio::null()).stderr(Stdio::null())
+        .creation_flags(CREATE_NO_WINDOW)
         .status();
 
     // Wait for the port to actually free up before rebinding - a killed process
@@ -92,6 +98,7 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         .env("KICAD_TAURI", "1")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
+        .creation_flags(CREATE_NO_WINDOW)
         .spawn()
         .map_err(|e| format!("spawn failed: {e}"))?;
     state.0.lock().unwrap().replace(child);
