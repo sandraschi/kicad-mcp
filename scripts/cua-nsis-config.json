@@ -4,12 +4,13 @@
   "operator_exe": "kicad-mcp-native.exe",
   "backend_process_names": [
     "kicad-mcp-native",
-    "kicad-mcp-native-backend"
+    "kicad-mcp-backend"
   ],
   "backend_port": 11016,
   "health_path": "/api/v1/health",
   "diagnostics_path": "/api/v1/diagnostics",
   "feature_smoke_path": "/api/v1/diagnostics",
+  "bridge_ok_text": "System Online",
   "window_title_re": "KiCad MCP",
   "nsis_glob": "native/target/release/bundle/nsis/KiCad MCP_*_x64-setup.exe",
   "uninstall_registry_filter": "*KiCad MCP*",

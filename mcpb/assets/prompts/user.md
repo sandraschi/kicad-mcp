@@ -1,4 +1,4 @@
-# kicad-mcp — User Guide
+# kicad-mcp - User Guide
 
 **Instructions for LLM:** This file must contain 4,000+ words of tutorials and usage guides.
 Include: installation, configuration, at least 10 step-by-step tutorials showing common workflows,
