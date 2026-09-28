@@ -4,7 +4,7 @@ Schematic MCP tools for KiCad eeschema.
 Provides schematic loading, inspection, symbol/connection listing,
 ERC checking, and netlist export.
 
-Registered via register_schematic_tools(mcp, **deps) — called from server.py.
+Registered via register_schematic_tools(mcp, **deps) - called from server.py.
 """
 
 import json

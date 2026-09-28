@@ -4,7 +4,7 @@ BOM (Bill of Materials) MCP tools for KiCad.
 Generates structured BOMs in CSV and JSON formats from KiCad PCB/schematic files.
 Supports grouping, sorting, and supplier field extraction.
 
-Registered via register_bom_tools(mcp, **deps) — called from server.py.
+Registered via register_bom_tools(mcp, **deps) - called from server.py.
 """
 
 import csv

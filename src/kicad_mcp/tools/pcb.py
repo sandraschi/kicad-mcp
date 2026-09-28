@@ -4,7 +4,7 @@ PCB (Printed Circuit Board) MCP tools for KiCad pcbnew.
 Provides board loading, inspection, component/net/track listing,
 DRC checking, and manufacturing export (STEP, Gerber).
 
-Registered via register_pcb_tools(mcp, **deps) — called from server.py.
+Registered via register_pcb_tools(mcp, **deps) - called from server.py.
 """
 
 import json
@@ -173,7 +173,7 @@ def register_pcb_tools(
                 return resp
         return {
             "success": False,
-            "message": "Requires IPC headless or TCP bridge — see docs/NIGHTLY_HEADLESS.md",
+            "message": "Requires IPC headless or TCP bridge - see docs/NIGHTLY_HEADLESS.md",
             "data": None,
         }
 
@@ -197,7 +197,7 @@ def register_pcb_tools(
                 return resp
         return {
             "success": False,
-            "message": "Requires IPC headless or TCP bridge — see docs/NIGHTLY_HEADLESS.md",
+            "message": "Requires IPC headless or TCP bridge - see docs/NIGHTLY_HEADLESS.md",
             "data": None,
         }
 
@@ -220,7 +220,7 @@ def register_pcb_tools(
             return resp
         return {
             "success": False,
-            "message": "Requires IPC headless or TCP bridge — see docs/NIGHTLY_HEADLESS.md",
+            "message": "Requires IPC headless or TCP bridge - see docs/NIGHTLY_HEADLESS.md",
             "data": None,
         }
 

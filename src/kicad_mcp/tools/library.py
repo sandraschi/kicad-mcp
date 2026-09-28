@@ -4,7 +4,7 @@ Library MCP tools for KiCad.
 Provides footprint and symbol library search, listing, and inspection.
 Uses kicad-cli for library queries.
 
-Registered via register_library_tools(mcp, **deps) — called from server.py.
+Registered via register_library_tools(mcp, **deps) - called from server.py.
 """
 
 import json

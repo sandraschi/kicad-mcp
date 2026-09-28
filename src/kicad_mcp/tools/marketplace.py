@@ -4,7 +4,7 @@ Schematics & Parts Marketplace MCP tools for KiCad.
 Searches GitHub, Kitspace, and SnapEDA for KiCad projects,
 reference designs, and component parts (footprints, symbols, 3D models).
 
-Registered via register_marketplace_tools(mcp, **deps) — called from server.py.
+Registered via register_marketplace_tools(mcp, **deps) - called from server.py.
 """
 
 import io
@@ -270,7 +270,7 @@ def register_marketplace_tools(
                     missing["missing_footprints"].append(ref)
 
             # Find symbols with missing footprint field in schematic files
-            # (requires .kicad_sch to be loaded — approximate via PCB)
+            # (requires .kicad_sch to be loaded - approximate via PCB)
             symbols_without_fp = re.findall(
                 r'\(footprint\s*""\s*\(fp_text\s+reference\s+"([^"]*)"',
                 content,
@@ -304,7 +304,7 @@ def register_marketplace_tools(
         ] = True,
     ) -> dict:
         """Search GitHub for simple KiCad board projects (breakouts, hats, shields,
-        dev boards — excludes complex boards like motherboards, servers, 8+ layer).
+        dev boards - excludes complex boards like motherboards, servers, 8+ layer).
 
         ## Return Format
         {"success": bool, "results": [...], "count": int}
