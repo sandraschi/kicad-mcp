@@ -249,9 +249,28 @@ def register_pcb_tools(
             if not resp.get("fallback"):
                 return resp
 
-        # kicad-cli fallback
+        # kicad-cli fallback. Real flags are --severity-error/--severity-warning/
+        # --severity-all (not a single --severity VALUE), and --format json is
+        # required or kicad-cli writes a human-readable text report instead --
+        # confirmed against the installed kicad-cli's own --help and a real run,
+        # since the previous invocation has always failed with
+        # "Unknown argument: --severity" on this CLI version.
+        severity_flags = {
+            "error": ["--severity-error"],
+            "warning": ["--severity-error", "--severity-warning"],
+            "all": ["--severity-all"],
+        }.get(severity, ["--severity-error", "--severity-warning"])
         result = await run_kicad_cli(
-            ["pcb", "drc", path, "--severity", severity, "--output", os.path.join(output_dir, "drc_report.json")]
+            [
+                "pcb",
+                "drc",
+                path,
+                *severity_flags,
+                "--format",
+                "json",
+                "--output",
+                os.path.join(output_dir, "drc_report.json"),
+            ]
         )
         if result["success"]:
             drc_path = os.path.join(output_dir, "drc_report.json")
