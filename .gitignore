@@ -11,7 +11,10 @@ htmlcov/
 *.egg-info/
 _dashboard/
 .env
-.bak
+*.bak
+*.bak.*
+*.bak-*
+cua-reports/
 reports/
 *.mcpb
 *.log

@@ -1,0 +1,20 @@
+{
+    "$schema":  "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+    "name":  "io.github.sandraschi/kicad-mcp",
+    "description":  "KiCad MCP server — PCB/schematic design automation via MCP tools and REST API",
+    "version":  "0.3.0",
+    "repository":  {
+                       "url":  "https://github.com/sandraschi/kicad-mcp",
+                       "source":  "github"
+                   },
+    "packages":  [
+                     {
+                         "registryType":  "mcpb",
+                         "identifier":  "https://github.com/sandraschi/kicad-mcp/releases/download/v0.3.0/kicad-mcp-v0.3.0.mcpb",
+                         "fileSha256":  "e8fa1303a449c454576bb7a20299b165ba641a20493b4e12304d3b5f0bec13ab",
+                         "transport":  {
+                                           "type":  "stdio"
+                                       }
+                     }
+                 ]
+}
