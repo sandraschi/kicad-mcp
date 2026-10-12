@@ -211,13 +211,15 @@ async def lifespan(app: FastAPI):
         _state["kicad_ok"] = True
         _state["kicad_version"] = stable.version or "unknown"
     else:
-        cli_path = _find_kicad_cli()
+        cli_path = await asyncio.to_thread(_find_kicad_cli)
         if cli_path:
             KICAD_CLI_PATH = cli_path
             _state["kicad_cli_path"] = cli_path
             _state["kicad_ok"] = True
             try:
-                r = subprocess.run([cli_path, "--version"], capture_output=True, text=True, timeout=10)
+                r = await asyncio.to_thread(
+                    subprocess.run, [cli_path, "--version"], capture_output=True, text=True, timeout=10
+                )
                 _state["kicad_version"] = r.stdout.strip() or r.stderr.strip()
             except Exception:
                 _state["kicad_version"] = "unknown"
